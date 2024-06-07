@@ -1,16 +1,11 @@
 package com.teamzero.phototest
 
-import android.graphics.drawable.Drawable
-import android.os.Build
 import android.os.Bundle
-import android.view.View
-import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
-import com.bumptech.glide.request.target.Target
 import com.github.chrisbanes.photoview.OnSingleFlingListener
-import java.io.File
 import com.github.chrisbanes.photoview.PhotoView
+import java.io.File
 
 class FullscreenActivity : AppCompatActivity() {
     private lateinit var files: ArrayList<File>
@@ -36,15 +31,14 @@ class FullscreenActivity : AppCompatActivity() {
             if (iv.scale == iv.minimumScale) {
                 if (velocityX > 0) {
                     number--
-                    if (number<0){
-                        number=files.size-1
+                    if (number < 0) {
+                        number = files.size - 1
                     }
                     setImage()
-                }
-                else if (velocityX < 0) {
+                } else if (velocityX < 0) {
                     number++
-                    if(number==files.size)
-                        number=0
+                    if (number == files.size)
+                        number = 0
                     setImage()
                 }
             }

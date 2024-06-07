@@ -1,89 +1,44 @@
 package com.teamzero.phototest
 
 import android.os.Bundle
-import android.os.Environment
-import android.util.DisplayMetrics
-import android.webkit.MimeTypeMap
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import java.io.File
-import java.net.URLEncoder
+import androidx.navigation.findNavController
+import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.ui.navigateUp
+import androidx.navigation.ui.setupActionBarWithNavController
+import com.teamzero.phototest.databinding.ActivityMainBinding
 
+//TODO
+// - запрос разрешений при старте
+// - категории при старте: фото, видео, аудио/ документы, загрузки, память устройства
+// - подсчёт документов и объёма памяти по категориям
+// - навигация между вкладками категории
+// - просмотр, перемещение, удаление
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var appBarConfiguration: AppBarConfiguration
+    private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        //findViewById<R.id.rvImages>
+
+        val navController = findNavController(R.id.nav_host_fragment_content_main)
+        appBarConfiguration = AppBarConfiguration(navController.graph)
+        setupActionBarWithNavController(navController, appBarConfiguration)
+
     }
-
-    val out: ArrayList<File> = arrayListOf()
 
     override fun onResume() {
         super.onResume()
-        if (out.isEmpty()) {
-            val directoryForFileSaving =
-                Environment.getExternalStorageDirectory()
-            // Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-
-
-            out.addAll(searchFiles(directoryForFileSaving))
-            /*for (file in list) {
-                getMimeType(file)
-            }*/
-            val outMetrics = DisplayMetrics()
-            // val metrics: WindowMetrics = context.getSystemService(WindowManager::class.java).currentWindowMetrics
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                val display = display
-                display?.getRealMetrics(outMetrics)
-            } else {
-                @Suppress("DEPRECATION")
-                val display = windowManager.defaultDisplay
-                @Suppress("DEPRECATION")
-                display.getMetrics(outMetrics)
-            }
-
-            val size: Int = outMetrics.widthPixels / 3
-            val rvImages: RecyclerView = findViewById(R.id.rvImages)
-            rvImages.layoutManager = GridLayoutManager(this, 3)
-            rvImages.adapter = ImageAdapter(this, size, out)
-        }
     }
 
-    private fun searchFiles(rootFile: File): ArrayList<out File> {
-        val out: ArrayList<File> = arrayListOf()
-        val list = rootFile.listFiles()
-        if (list != null && list.isNotEmpty()) {
-            for (file in list) {
-                if (file.isDirectory) {
-                    out.addAll(searchFiles(file))
-                } else {
-                    val type = getMimeType(file) ?: ""
-                    if (/*getMimeType(file).equals("image/jpeg")*/type.contains("image") || type.contains(
-                            "video"
-                        )
-                    ) {
-                        out.add(file)
-                    }
-                }
-            }
-        }
-        return out
+    override fun onSupportNavigateUp(): Boolean {
+        val navController = findNavController(R.id.nav_host_fragment_content_main)
+        return navController.navigateUp(appBarConfiguration)
+                || super.onSupportNavigateUp()
     }
-
-    private fun getMimeType(file: File): String? {
-        var type: String? = null
-        val url = URLEncoder.encode(file.absolutePath, "UTF-8")
-        val extension = MimeTypeMap.getFileExtensionFromUrl(url)
-        if (extension != null) {
-            type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
-        }
-        return type
-    }
-
-
 }
