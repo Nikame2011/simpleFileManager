@@ -15,11 +15,12 @@ import com.teamzero.phototest.adapters.AudioAdapter
 import com.teamzero.phototest.adapters.FilesImageAdapter
 import com.teamzero.phototest.adapters.ImageAdapter
 import com.teamzero.phototest.databinding.FragmentPhotoBinding
-import com.teamzero.phototest.indexer.DirInfo
-import com.teamzero.phototest.indexer.indexFiles
-import com.teamzero.phototest.indexer.types
+import com.teamzero.phototest.helpers.DirInfo
+import com.teamzero.phototest.helpers.FileIndexer
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -51,10 +52,15 @@ class PhotoFolders : Fragment() {
         val typeFiles: Int = arguments?.getInt("typeFiles", 0)!!
 
         if (arguments?.containsKey("folder") == false) {
+            //todo find difference with viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Default)
+
+            //todo replace  
+            // CoroutineScope(Dispatchers.Default).launch {launch{1} launch{2} await[1,2]  viewLifecycleOwner.lifecycleScope.launch{3}}
+            // to viewLifecycleOwner.lifecycleScope.launch {launch(Dispatchers.Default){1} launch(Dispatchers.Default){2} await[1,2] 3 }}
             CoroutineScope(Dispatchers.Default).launch {
                 launch {
 
-                    val folders = indexFiles[typeFiles]
+                    val folders = FileIndexer.indexFiles[typeFiles]
                     val outMetrics = DisplayMetrics()
                     // val metrics: WindowMetrics = context.getSystemService(WindowManager::class.java).currentWindowMetrics
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
@@ -67,7 +73,7 @@ class PhotoFolders : Fragment() {
 
                     val size: Int = outMetrics.widthPixels / 3
 
-                    viewLifecycleOwner.lifecycleScope.launch {
+                    viewLifecycleOwner.lifecycleScope.launch() {
                         //Toast.makeText(context, "allFinded", Toast.LENGTH_SHORT).show();
 
                         val rvImages: RecyclerView = binding.rvImages
@@ -93,7 +99,12 @@ class PhotoFolders : Fragment() {
                         arguments?.getSerializable("folder") as DirInfo
 
                     //todo add deffered to search files
-                    val folders:ArrayList<File> = searchFiles(directoryInfo.rootFolder, types!![typeFiles]).reversed() as ArrayList<File>
+
+                    //todo init adapter with empty list before run searchFiles. when file be found in fun do adapter.addItem(file). in addItem fun make list.add(0,file) to revert list files
+                    val folders: ArrayList<File> = searchFiles(
+                        directoryInfo.rootFolder,
+                        FileIndexer.types!![typeFiles]
+                    ).reversed() as ArrayList<File>
 
                     val outMetrics = DisplayMetrics()
 
@@ -133,6 +144,25 @@ class PhotoFolders : Fragment() {
                         out.add(file)
                     }
                 }
+            }
+        }
+        return out
+    }
+
+    private suspend fun searchFiles2(rootFile: File, typeList: ArrayList<String>): ArrayList<File> {
+        val out: ArrayList<File> = arrayListOf()
+        val list = rootFile.listFiles()
+        val defList = arrayListOf<Deferred<File?>>()
+        if (list != null && list.isNotEmpty()) {
+            for (file in list) {
+                defList.add(CoroutineScope(Dispatchers.Default).async {
+                    if (file.isFile && typeList.contains(file.extension.lowercase()))
+                        return@async file
+                    return@async null
+                })
+            }
+            for (def in defList) {
+                def.await()?.let { out.add(it) }
             }
         }
         return out

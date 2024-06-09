@@ -12,7 +12,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.teamzero.phototest.FullscreenActivity
 import com.teamzero.phototest.R
-import com.teamzero.phototest.indexer.DirInfo
+import com.teamzero.phototest.helpers.DirInfo
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 //todo add documentation to all classes and methods
 class FilesImageAdapter(
@@ -47,7 +50,9 @@ class FilesImageAdapter(
             holder.root.setOnLongClickListener(checkLongListener)
             holder.root.setOnClickListener(openShortListener)
         }
-        Glide.with(context).load(files[position].file).into(holder.ivPresent)
+        CoroutineScope(Dispatchers.Main).launch {
+            Glide.with(context).load(files[position].file).into(holder.ivPresent)
+        }
     }
 
     override fun getItemCount() = files.size

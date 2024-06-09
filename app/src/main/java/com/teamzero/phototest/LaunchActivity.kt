@@ -10,7 +10,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.ContextCompat
-import com.teamzero.phototest.indexer.runIndexator
+import com.teamzero.phototest.helpers.FileIndexer
+import com.teamzero.phototest.helpers.PermissionManager
 import java.util.Date
 
 //todo The application should not provide its own launch screen/ API SplashScreen
@@ -21,7 +22,7 @@ class LaunchActivity : AppCompatActivity() {
         setContentView(R.layout.activity_launch)
 
         if (!checkPermission()) {
-            runIndexator()
+            FileIndexer.runIndexation()
             val intent = Intent(this, MainActivity::class.java)
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -179,7 +180,7 @@ class LaunchActivity : AppCompatActivity() {
                             }
                         }*/
                 if (!checkPermission()) {
-                    runIndexator()
+                    FileIndexer.runIndexation()
                     val intent = Intent(this, MainActivity::class.java)
                     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

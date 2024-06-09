@@ -10,7 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.teamzero.phototest.R
 import com.teamzero.phototest.databinding.FragmentMainBinding
-import com.teamzero.phototest.indexer.getIndexCount
+import com.teamzero.phototest.helpers.FileIndexer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -87,7 +87,7 @@ class MainFragment : Fragment() {
                     strt = 0L
 */
                 val filesCount =
-                    getIndexCount()//countFilesTarget2(rootDirectory, arrayOf(audioTypesList,imageTypesList,videoTypesList)).await()//
+                    FileIndexer.getIndexCount()//countFilesTarget2(rootDirectory, arrayOf(audioTypesList,imageTypesList,videoTypesList)).await()//
                 // val fin = Date().time
 
                 viewLifecycleOwner.lifecycleScope.launch {
