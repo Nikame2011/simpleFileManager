@@ -31,13 +31,14 @@ class FilesImageAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
         val itemView =
             LayoutInflater.from(parent.context)
-                .inflate(R.layout.present_item, parent, false)
+                .inflate(R.layout.item_photo, parent, false)
         return MyViewHolder(itemView)
     }
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
 
         holder.ivPresent.layoutParams.height = size
+        holder.ivPresent.layoutParams.width = size
         holder.tvName.text = files[position].name
         holder.root.tag = position
         if (isSelectionMode) {

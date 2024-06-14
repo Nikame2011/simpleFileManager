@@ -9,18 +9,18 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.teamzero.phototest.R
+import com.teamzero.phototest.adapters.AdapterInterface
 import com.teamzero.phototest.adapters.AudioAdapter
+import com.teamzero.phototest.adapters.FilesAudioAdapter
 import com.teamzero.phototest.adapters.FilesImageAdapter
 import com.teamzero.phototest.adapters.ImageAdapter
 import com.teamzero.phototest.databinding.FragmentPhotoBinding
 import com.teamzero.phototest.helpers.DirInfo
 import com.teamzero.phototest.helpers.FileIndexer
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -57,29 +57,32 @@ class PhotoFolders : Fragment() {
             //todo replace  
             // CoroutineScope(Dispatchers.Default).launch {launch{1} launch{2} await[1,2]  viewLifecycleOwner.lifecycleScope.launch{3}}
             // to viewLifecycleOwner.lifecycleScope.launch {launch(Dispatchers.Default){1} launch(Dispatchers.Default){2} await[1,2] 3 }}
-            CoroutineScope(Dispatchers.Default).launch {
-                launch {
+            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Default) {
 
-                    val folders = FileIndexer.indexFiles[typeFiles]
-                    val outMetrics = DisplayMetrics()
-                    // val metrics: WindowMetrics = context.getSystemService(WindowManager::class.java).currentWindowMetrics
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                        val display = activity?.display
-                        display?.getRealMetrics(outMetrics)
+                val folders = FileIndexer.indexFiles[typeFiles]
+
+                val size: Int = getDisplayWidth() / 3
+
+                launch(Dispatchers.Main) {
+                    //Toast.makeText(context, "allFinded", Toast.LENGTH_SHORT).show();
+
+                    if (typeFiles == 0) {
+                        binding.rvImages.layoutManager =
+                            LinearLayoutManager(binding.rvImages.context, RecyclerView.VERTICAL, false)
+
+                        binding.rvImages.adapter = FilesAudioAdapter(requireContext(), size, folders) {
+                            val bundle = Bundle()
+                            bundle.putSerializable("folder", it)
+                            bundle.putInt("typeFiles", typeFiles)
+                            findNavController().navigate(
+                                R.id.action_photo_self2,
+                                bundle
+                            )
+                        }
                     } else {
-                        val display = activity?.windowManager?.defaultDisplay
-                        display?.getMetrics(outMetrics)
-                    }
+                        binding.rvImages.layoutManager = GridLayoutManager(binding.rvImages.context, 3)
 
-                    val size: Int = outMetrics.widthPixels / 3
-
-                    viewLifecycleOwner.lifecycleScope.launch() {
-                        //Toast.makeText(context, "allFinded", Toast.LENGTH_SHORT).show();
-
-                        val rvImages: RecyclerView = binding.rvImages
-                        rvImages.layoutManager = GridLayoutManager(binding.rvImages.context, 3)
-
-                        rvImages.adapter = FilesImageAdapter(requireContext(), size, folders) {
+                        binding.rvImages.adapter = FilesImageAdapter(requireContext(), size, folders) {
                             val bundle = Bundle()
                             bundle.putSerializable("folder", it)
                             bundle.putInt("typeFiles", typeFiles)
@@ -93,41 +96,97 @@ class PhotoFolders : Fragment() {
             }
         } else {
 
-            CoroutineScope(Dispatchers.Default).launch {
-                launch {
+//            CoroutineScope(Dispatchers.Default).launch {
+//                launch {
+//                    val directoryInfo: DirInfo =
+//                        arguments?.getSerializable("folder") as DirInfo
+//
+//                    //todo add deffered to search files
+//
+//                    val folders: ArrayList<File> = searchFiles(
+//                        directoryInfo.rootFolder,
+//                        FileIndexer.types!![typeFiles]
+//                    ).reversed() as ArrayList<File>
+//
+//                    /* Code to test other methods for searching
+//                    val sz=30
+//                    val dates = Array<Long>(sz){0}
+//                    val dates2 = Array<Long>(sz){0}
+//
+//                    for (i in 0..sz-1){
+//                        val strt = Date().time
+//                        val folders: ArrayList<File> = searchFiles(
+//                            directoryInfo.rootFolder,
+//                            FileIndexer.types!![typeFiles]
+//                        ).reversed() as ArrayList<File>
+//                        val fin = Date().time
+//
+//                        val strt2 = Date().time
+//                        val folders2: ArrayList<File> = searchFiles2(
+//                            directoryInfo.rootFolder,
+//                            FileIndexer.types!![typeFiles]
+//                        ).reversed() as ArrayList<File>
+//                        val fin2 = Date().time
+//
+//                        dates[i]=fin-strt
+//                        dates2[i]=fin2-strt2
+//
+//                        viewLifecycleOwner.lifecycleScope.launch {
+//                            binding.textView1.text= "old max: ${dates.max()} inter: ${dates.sum()/(i+1)} min: ${dates.min()}"
+//                            binding.textView2.text= "new max: ${dates2.max()} inter: ${dates2.sum()/(i+1)} min: ${dates2.min()}"
+//                        }
+//                    }
+//                    */
+//
+//                    val outMetrics = DisplayMetrics()
+//
+//                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+//                        val display = activity?.display
+//                        display?.getRealMetrics(outMetrics)
+//                    } else {
+//                        val display = activity?.windowManager?.defaultDisplay
+//                        display?.getMetrics(outMetrics)
+//                    }
+//
+//                    val size: Int = outMetrics.widthPixels / 3
+//
+//                    viewLifecycleOwner.lifecycleScope.launch {
+//                        val rvImages: RecyclerView = binding.rvImages
+//                        rvImages.layoutManager = GridLayoutManager(binding.rvImages.context, 3)
+//                        if (typeFiles != 1) {
+//                            rvImages.adapter = AudioAdapter(requireContext(), size, folders)
+//                        } else {
+//                            rvImages.adapter = ImageAdapter(requireContext(), size, folders)
+//                        }
+//                    }
+//                }
+
+            viewLifecycleOwner.lifecycleScope.launch {
+
+                if (typeFiles == 0) {
+                    val size: Int = getDisplayWidth() / 3
+                    binding.rvImages.layoutManager =
+                        LinearLayoutManager(binding.rvImages.context, RecyclerView.VERTICAL, false)
+                    binding.rvImages.adapter = AudioAdapter(requireContext(), size, ArrayList())
+                } else {
+                    val countItem=4
+                    val size: Int = getDisplayWidth() / countItem
+                    binding.rvImages.layoutManager = GridLayoutManager(binding.rvImages.context, countItem)
+                    binding.rvImages.adapter = ImageAdapter(requireContext(), size, ArrayList())
+                }
+
+                launch(Dispatchers.Default) {
                     val directoryInfo: DirInfo =
                         arguments?.getSerializable("folder") as DirInfo
 
-                    //todo add deffered to search files
-
-                    //todo init adapter with empty list before run searchFiles. when file be found in fun do adapter.addItem(file). in addItem fun make list.add(0,file) to revert list files
-                    val folders: ArrayList<File> = searchFiles(
-                        directoryInfo.rootFolder,
-                        FileIndexer.types!![typeFiles]
-                    ).reversed() as ArrayList<File>
-
-                    val outMetrics = DisplayMetrics()
-
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                        val display = activity?.display
-                        display?.getRealMetrics(outMetrics)
-                    } else {
-                        val display = activity?.windowManager?.defaultDisplay
-                        display?.getMetrics(outMetrics)
-                    }
-
-                    val size: Int = outMetrics.widthPixels / 3
-
-                    viewLifecycleOwner.lifecycleScope.launch {
-                        val rvImages: RecyclerView = binding.rvImages
-                        rvImages.layoutManager = GridLayoutManager(binding.rvImages.context, 3)
-                        if (typeFiles != 1) {
-                            rvImages.adapter = AudioAdapter(requireContext(), size, folders)
-                        } else {
-                            rvImages.adapter = ImageAdapter(requireContext(), size, folders)
-                        }
-                    }
+                    //if(rvImages.adapter!=null && rvImages.adapter is AdapterInterface )
+                    searchFiles3(
+                        directoryInfo.rootFolder, FileIndexer.types!![typeFiles],
+                        binding.rvImages.adapter as AdapterInterface
+                    )
+                    // )
                 }
+
             }
         }
 
@@ -149,23 +208,37 @@ class PhotoFolders : Fragment() {
         return out
     }
 
-    private suspend fun searchFiles2(rootFile: File, typeList: ArrayList<String>): ArrayList<File> {
-        val out: ArrayList<File> = arrayListOf()
+    fun getDisplayWidth():Int{
+        val outMetrics = DisplayMetrics()
+        // val metrics: WindowMetrics = context.getSystemService(WindowManager::class.java).currentWindowMetrics
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            val display = activity?.display
+            display?.getRealMetrics(outMetrics)
+        } else {
+            val display = activity?.windowManager?.defaultDisplay
+            display?.getMetrics(outMetrics)
+        }
+
+        return Math.min(outMetrics.widthPixels,outMetrics.heightPixels)
+    }
+
+    private suspend fun searchFiles3(
+        rootFile: File,
+        typeList: ArrayList<String>,
+        adapter: AdapterInterface
+    ) {
         val list = rootFile.listFiles()
-        val defList = arrayListOf<Deferred<File?>>()
         if (list != null && list.isNotEmpty()) {
-            for (file in list) {
-                defList.add(CoroutineScope(Dispatchers.Default).async {
-                    if (file.isFile && typeList.contains(file.extension.lowercase()))
-                        return@async file
-                    return@async null
-                })
-            }
-            for (def in defList) {
-                def.await()?.let { out.add(it) }
+            for (file in list.reversed()) {
+                if (file.isFile) {
+                    if (typeList.contains(file.extension.lowercase())) {
+                        viewLifecycleOwner.lifecycleScope.launch {
+                            adapter.addItem(file)
+                        }
+                    }
+                }
             }
         }
-        return out
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -177,6 +250,4 @@ class PhotoFolders : Fragment() {
         super.onDestroyView()
         _binding = null
     }
-
-
 }

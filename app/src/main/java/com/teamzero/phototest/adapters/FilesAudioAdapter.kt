@@ -2,6 +2,8 @@ package com.teamzero.phototest.adapters
 
 import android.content.Context
 import android.content.Intent
+import android.media.MediaMetadataRetriever
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,31 +14,30 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.teamzero.phototest.FullscreenActivity
 import com.teamzero.phototest.R
+import com.teamzero.phototest.helpers.DirInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.io.File
 
-class ImageAdapter(
+//todo add documentation to all classes and methods
+class FilesAudioAdapter(
     private val context: Context,
     private val size: Int,
-    private val files: ArrayList<File>
-) : RecyclerView.Adapter<ImageAdapter.MyViewHolder>(), AdapterInterface {
+    private val files: ArrayList<DirInfo>,
+    val onFolderSelectedListener: (DirInfo) -> Unit
+) : RecyclerView.Adapter<FilesAudioAdapter.MyViewHolder>() {
 
     private val checked: ArrayList<Int> = ArrayList()
+    private var isSelectionMode = false
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
-
         val itemView =
             LayoutInflater.from(parent.context)
-                .inflate(R.layout.item_photo, parent, false)
+                .inflate(R.layout.item_folder, parent, false)
         return MyViewHolder(itemView)
     }
 
-    private var isSelectionMode = false
-
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
-
         holder.ivPresent.layoutParams.height = size
         holder.ivPresent.layoutParams.width = size
         holder.tvName.text = files[position].name
@@ -52,8 +53,25 @@ class ImageAdapter(
             holder.root.setOnClickListener(openShortListener)
         }
         CoroutineScope(Dispatchers.Main).launch {
-            if(files[position].length()>0) {
-                Glide.with(context).load(files[position]).into(holder.ivPresent)
+            if(files[position].file?.length()!! >0) {
+                try {
+                    val metaRetriver = MediaMetadataRetriever()
+                    metaRetriver.setDataSource(files[position].file?.absolutePath)
+                    val art = metaRetriver.getEmbeddedPicture()
+                    if (art != null) {
+                        Glide.with(context).load(art).into(holder.ivPresent)
+                    }
+                    else{//R.drawable.abc_ic_menu_selectall_mtrl_alpha
+                        Glide.with(context).load(R.drawable.folder_audio).into(holder.ivPresent)
+                    }
+                } catch (e: Exception) {
+                    Log.e("audio icon error", files[position].file?.absolutePath, e)
+                    //Toast.makeText(context, "audio icon error", Toast.LENGTH_LONG).show()
+                    Glide.with(context).load(R.drawable.folder_audio).into(holder.ivPresent)
+                }
+            }
+            else{//R.drawable.abc_ic_menu_selectall_mtrl_alpha
+                Glide.with(context).load(R.drawable.folder_audio).into(holder.ivPresent)
             }
         }
     }
@@ -115,16 +133,8 @@ class ImageAdapter(
 
     private val openShortListener: View.OnClickListener = View.OnClickListener {
         val number: Int = it.tag as Int
-        val intent = Intent(context, FullscreenActivity::class.java)
-        intent.putExtra("CODE", files)
-        intent.putExtra("SELECTED", number)
-        it.context.startActivity(intent)
-    }
-
-    @Synchronized
-    override fun addItem(file: File){
-        files.add( file)
-        notifyItemInserted(files.size-1)
+        val file = files[number]
+        onFolderSelectedListener(file)
     }
 
     class MyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
