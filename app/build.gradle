@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace 'com.teamzero.phototest'
+    namespace 'com.nikame.sfmanager'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.teamzero.phototest"
+        applicationId "com.nikame.sfmanager"
         minSdk 21
         targetSdk 33
         versionCode 1

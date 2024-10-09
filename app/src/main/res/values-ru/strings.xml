@@ -1,8 +1,7 @@
 <resources>
-    <string name="app_name" translatable="false">SFManager</string>
     <string name="download">Загрузки</string>
-    <string name="images">Изображения</string>
     <string name="video">Видео</string>
     <string name="audio">Аудио</string>
+    <string name="images">Изображения</string>
     <string name="documents">Документы</string>
 </resources>

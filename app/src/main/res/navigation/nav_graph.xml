@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/mainFragment"
-        android:name="com.teamzero.phototest.fragments.MainFragment"
+        android:name="com.nikame.sfmanager.fragments.MainFragment"
         android:label="fragment_main"
         tools:layout="@layout/fragment_main">
         <action
@@ -20,13 +20,13 @@
 
     <fragment
         android:id="@+id/explorer"
-        android:name="com.teamzero.phototest.fragments.Explorer"
+        android:name="com.nikame.sfmanager.fragments.Explorer"
         android:label="Explorer"
         tools:layout="@layout/fragment_explorer" />
 
     <fragment
         android:id="@+id/photo"
-        android:name="com.teamzero.phototest.fragments.PhotoFolders"
+        android:name="com.nikame.sfmanager.fragments.PhotoFolders"
         android:label="Photo"
         tools:layout="@layout/fragment_photo">
         <action
