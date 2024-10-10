@@ -22,7 +22,11 @@
         android:id="@+id/explorer"
         android:name="com.nikame.sfmanager.fragments.Explorer"
         android:label="Explorer"
-        tools:layout="@layout/fragment_explorer" />
+        tools:layout="@layout/fragment_explorer" >
+        <action
+            android:id="@+id/action_explorer_self"
+            app:destination="@id/explorer" />
+    </fragment>
 
     <fragment
         android:id="@+id/photo"

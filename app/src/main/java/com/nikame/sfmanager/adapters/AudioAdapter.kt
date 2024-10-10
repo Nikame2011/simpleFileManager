@@ -1,7 +1,6 @@
 package com.nikame.sfmanager.adapters
 
 import android.content.Context
-import android.content.Intent
 import android.media.MediaMetadataRetriever
 import android.util.Log
 import android.view.LayoutInflater
@@ -12,7 +11,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.nikame.sfmanager.FullscreenActivity
 import com.nikame.sfmanager.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,15 +42,13 @@ class AudioAdapter(
         holder.ivPresent.layoutParams.width = size
         holder.tvName.text = files[position].name
         holder.root.tag = position
-        if (isSelectionMode) {
+        holder.root.setOnLongClickListener(longListener)
+        holder.root.setOnClickListener(shortListener)
+        if (checked.contains(position)) {
             holder.cbSelected.visibility = View.VISIBLE
             holder.cbSelected.isChecked = checked.contains(position)
-            holder.root.setOnLongClickListener(openLongListener)
-            holder.root.setOnClickListener(checkShortListener)
         } else {
             holder.cbSelected.visibility = View.GONE
-            holder.root.setOnLongClickListener(checkLongListener)
-            holder.root.setOnClickListener(openShortListener)
         }
         //TODO to video files add other adapter - because video-adapter need view as photo-adapter, but audio-adapter be like folder-view
 
@@ -83,56 +79,60 @@ class AudioAdapter(
 
     override fun getItemCount() = files.size
 
-    private val checkLongListener: View.OnLongClickListener = View.OnLongClickListener {
+    private val longListener: View.OnLongClickListener = View.OnLongClickListener {
         val number: Int = it.tag as Int
-        if (checked.contains(number)) {
-            checked.remove(number)
-            if (checked.size == 0) {
-                isSelectionMode = false
-                notifyDataSetChanged()
-            } else {
-                notifyItemChanged(number)
-            }
+        if (isSelectionMode) {
+            /*      TODO add code to open file in other apps or add audio/video players
+                   val intent = Intent(Intent.ACTION_VIEW, Uri.fromFile(files[number]))
+                   intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                   intent.setDataAndType(Uri.fromFile(files[number]), getMimeType(files[number]))
+                   it.context.startActivity(intent)*/
+//            val intent = Intent(context, FullscreenActivity::class.java)
+//            intent.putExtra("CODE", files)
+//            intent.putExtra("SELECTED", number)
+//            it.context.startActivity(intent)
         } else {
-            checked.add(number)
-            if (!isSelectionMode) {
-                isSelectionMode = true
-                notifyDataSetChanged()
+            if (checked.contains(number)) {
+                checked.remove(number)
+                if (checked.size == 0) {
+                    isSelectionMode = false
+                }
+                notifyItemChanged(number)
             } else {
+                checked.add(number)
+                if (!isSelectionMode) {
+                    isSelectionMode = true
+                }
                 notifyItemChanged(number)
             }
         }
-
         true
     }
 
-    private val openLongListener: View.OnLongClickListener = View.OnLongClickListener {
+    private val shortListener: View.OnClickListener = View.OnClickListener {
         val number: Int = it.tag as Int
-        val intent = Intent(context, FullscreenActivity::class.java)
-        intent.putExtra("CODE", files)
-        intent.putExtra("SELECTED", number)
-        it.context.startActivity(intent)
-        true
-    }
-
-    private val checkShortListener: View.OnClickListener = View.OnClickListener {
-        val number: Int = it.tag as Int
-        if (checked.contains(number)) {
-            checked.remove(number)
-            if (checked.size == 0) {
-                isSelectionMode = false
-                notifyDataSetChanged()
+        if (isSelectionMode) {
+            if (checked.contains(number)) {
+                checked.remove(number)
+                if (checked.size == 0) {
+                    isSelectionMode = false
+                }
+                notifyItemChanged(number)
             } else {
+                checked.add(number)
                 notifyItemChanged(number)
             }
         } else {
-            checked.add(number)
-            if (!isSelectionMode) {
-                isSelectionMode = true
-                notifyDataSetChanged()
-            } else {
-                notifyItemChanged(number)
-            }
+            /*      TODO add code to open file in other apps or add audio/video players
+                   val intent = Intent(Intent.ACTION_VIEW, Uri.fromFile(files[number]))
+                   intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                   intent.setDataAndType(Uri.fromFile(files[number]), getMimeType(files[number]))
+                   it.context.startActivity(intent)*/
+
+//            val intent = Intent(context, FullscreenActivity::class.java)
+//            intent.putExtra("CODE", files)
+//            intent.putExtra("SELECTED", number)
+//            it.context.startActivity(intent)
         }
     }
 
@@ -142,20 +142,7 @@ class AudioAdapter(
         notifyItemInserted(files.size - 1)
     }
 
-    private val openShortListener: View.OnClickListener = View.OnClickListener {
-        /*val number: Int = it.tag as Int
 
-        val intent = Intent(context, FullscreenActivity::class.java)
-        intent.putExtra("CODE", files)
-        intent.putExtra("SELECTED", number)
-        it.context.startActivity(intent)
-        */
-        /*      TODO add code to open file in other apps or add audio/video players
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.fromFile(files[number]))
-                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    intent.setDataAndType(Uri.fromFile(files[number]), getMimeType(files[number]))
-                    it.context.startActivity(intent)*/
-    }
 
     class MyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val root: ViewGroup = itemView.findViewById(R.id.clRoot)

@@ -29,9 +29,11 @@ class MainFragment : Fragment() {
         val bundle = Bundle()
 
         if (view.id == R.id.frExplorer) {
+            bundle.putSerializable("folder", Environment.getExternalStorageDirectory())
             id = R.id.action_mainFragment_to_explorer
         } else if (view.id == R.id.frDownload) {
-            //id=R.id.action_mainFragment_to_explorer
+            bundle.putSerializable("folder", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS))
+            id = R.id.action_mainFragment_to_explorer
         } else if (view.id == R.id.frImage) {
             id = R.id.action_mainFragment_to_photo
             type = 1

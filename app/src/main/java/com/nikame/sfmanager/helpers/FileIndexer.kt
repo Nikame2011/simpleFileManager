@@ -15,7 +15,6 @@ import kotlin.collections.ArrayList
 class FileIndexer {
     companion object {
 
-
 //TODO add class to describe folders in main fragment: class need include list with allowed types files,
 // method with search logic and adapters to present items
 
@@ -29,10 +28,13 @@ class FileIndexer {
 //        var deferredCounter: Deferred<Array<Int>>? = null
 
         var deferredIndexation: Deferred<Array<TypeDescriptor>>? = null
+        var deferredSavedIndexation: Deferred<Array<TypeDescriptor>>? = null
 
         var counter: Array<Int>? = null
 
         var indexes: Array<TypeDescriptor>? = null
+
+        var savedIndexes: Array<TypeDescriptor>? = null
 
         var types: Array<ArrayList<String>>? = null
 
@@ -45,7 +47,7 @@ class FileIndexer {
             CoroutineScope(Dispatchers.Default).launch {
                 types = arrayOf(audioTypesList, imageTypesList, videoTypesList, documentsTypesList)
                 indexFiles =
-                    Array(types!!.size) { ArrayList() } //todo add initialize from different size with count from added type Lists
+                    Array(types!!.size) {ArrayList()} //todo add initialize from different size with count from added type Lists
 //                deferredCounter =//todo remove this
 //                    countFilesTarget(
 //                        Environment.getExternalStorageDirectory(),
@@ -78,6 +80,17 @@ class FileIndexer {
 //            }
 //            return counter as Array<Int>
 //        }
+
+        suspend fun getSavedIndexes(): Array<TypeDescriptor> {
+            if (savedIndexes == null) {
+                if (deferredSavedIndexation != null) {
+                    savedIndexes = deferredSavedIndexation!!.await()
+                } else {
+                    throw NullPointerException()
+                }
+            }
+            return savedIndexes as Array<TypeDescriptor>
+        }
 
         suspend fun getIndexes(): Array<TypeDescriptor> {
             if (indexes == null) {

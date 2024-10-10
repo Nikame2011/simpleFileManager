@@ -75,8 +75,8 @@ class FilesImageAdapter(
     }
 
     private val shortListener: View.OnClickListener = View.OnClickListener {
+        val number: Int = it.tag as Int
         if (isSelectionMode) {
-            val number: Int = it.tag as Int
             if (checked.contains(number)) {
                 checked.remove(number)
                 if (checked.size == 0) {
@@ -88,7 +88,6 @@ class FilesImageAdapter(
                 notifyItemChanged(number)
             }
         } else {
-            val number: Int = it.tag as Int
             val file = files[number]
             onFolderSelectedListener(file)
         }
