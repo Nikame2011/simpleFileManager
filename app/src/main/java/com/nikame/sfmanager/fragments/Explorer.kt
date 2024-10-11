@@ -15,6 +15,7 @@ import com.nikame.sfmanager.adapters.ExplorerAdapter
 import com.nikame.sfmanager.databinding.FragmentExplorerBinding
 import kotlinx.coroutines.launch
 import java.io.File
+import java.util.Collections
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
@@ -38,13 +39,29 @@ class Explorer : Fragment() {
             val directoryInfo: File =
                 arguments?.getSerializable("folder") as File
 
-            val size: Int = getDisplayWidth() / 3
+            val size: Int = getDisplayWidth() / 10 //todo size is so different in other devices(tablets - phones) need create more efficient logic
             binding.rv.layoutManager =
                 LinearLayoutManager(binding.rv.context, RecyclerView.VERTICAL, false)
-            var list =  arrayListOf<File>()
+            val list = arrayListOf<File>()
             directoryInfo.listFiles()?.let { list.addAll(it) }
+            Collections.sort(list, Comparator { t, t2 ->
+                if (t.isDirectory) {
+                    if (t2.isDirectory) {//t.lastModified()<t2.lastModified()
+                        return@Comparator t.name.compareTo(t2.name)//0
+                    } else {
+                        return@Comparator -1
+                    }
+                } else {
+                    if (t2.isDirectory) {//t.lastModified()<t2.lastModified()
+                        return@Comparator 1
+                    } else {
+                        return@Comparator t.name.compareTo(t2.name)//0
+                    }
+                }
+            })
+            //todo sort files by different types: name, size, date, type
 
-            binding.rv.adapter = ExplorerAdapter(requireContext(), size, list){
+            binding.rv.adapter = ExplorerAdapter(requireContext(), size, list) {
                 val bundle = Bundle()
                 bundle.putSerializable("folder", it)
                 findNavController().navigate(
@@ -75,7 +92,6 @@ class Explorer : Fragment() {
                 counter++
             }
         }*/
-
 
 
 //        binding.imageView.visibility = VISIBLE
@@ -112,7 +128,7 @@ class Explorer : Fragment() {
           }*/
     }
 
-    fun getDisplayWidth():Int{
+    fun getDisplayWidth(): Int {
         val outMetrics = DisplayMetrics()
         // val metrics: WindowMetrics = context.getSystemService(WindowManager::class.java).currentWindowMetrics
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
@@ -123,9 +139,8 @@ class Explorer : Fragment() {
             display?.getMetrics(outMetrics)
         }
 
-        return Math.min(outMetrics.widthPixels,outMetrics.heightPixels)
+        return Math.min(outMetrics.widthPixels, outMetrics.heightPixels)
     }
-
 
 
     override fun onDestroyView() {

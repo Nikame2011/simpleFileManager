@@ -53,7 +53,8 @@ class ExplorerAdapter(
         }
 
         holder.tvDescr.text = (files[position].length() / 1024f / 1024f).toString()
-        holder.tvDate.text = Date(files[position].lastModified()).toString()
+        val dateFormat = android.text.format.DateFormat.getDateFormat(context)
+        holder.tvDate.text =dateFormat.format(Date(files[position].lastModified()))
 
         if(files[position].isFile) {
             CoroutineScope(Dispatchers.Main).launch {
@@ -61,6 +62,9 @@ class ExplorerAdapter(
                     Glide.with(context).load(files[position]).into(holder.ivPresent)
                 }
             }
+        }
+        else{
+            //todo need add folder icon
         }
     }
 

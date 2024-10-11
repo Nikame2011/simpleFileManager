@@ -70,7 +70,7 @@ class PhotoFolders : Fragment() {
                         binding.rvImages.layoutManager =
                             LinearLayoutManager(binding.rvImages.context, RecyclerView.VERTICAL, false)
 
-                        binding.rvImages.adapter = FilesAudioAdapter(requireContext(), size, folders) {
+                        binding.rvImages.adapter = FilesAudioAdapter(requireContext(), size/2, folders) {
                             val bundle = Bundle()
                             bundle.putSerializable("folder", it)
                             bundle.putInt("typeFiles", typeFiles)
@@ -164,7 +164,7 @@ class PhotoFolders : Fragment() {
             viewLifecycleOwner.lifecycleScope.launch {
 
                 if (typeFiles == 0) {
-                    val size: Int = getDisplayWidth() / 3
+                    val size: Int = getDisplayWidth() / 6
                     binding.rvImages.layoutManager =
                         LinearLayoutManager(binding.rvImages.context, RecyclerView.VERTICAL, false)
                     binding.rvImages.adapter = AudioAdapter(requireContext(), size, ArrayList())

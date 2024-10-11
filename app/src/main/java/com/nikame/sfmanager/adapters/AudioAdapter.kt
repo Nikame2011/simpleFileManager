@@ -53,7 +53,8 @@ class AudioAdapter(
         //TODO to video files add other adapter - because video-adapter need view as photo-adapter, but audio-adapter be like folder-view
 
         holder.tvDescr.text = (files[position].length() / 1024f / 1024f).toString()
-        holder.tvDate.text = Date(files[position].lastModified()).toString()
+        val dateFormat = android.text.format.DateFormat.getDateFormat(context)
+        holder.tvDate.text = dateFormat.format(Date(files[position].lastModified()))
 
         CoroutineScope(Dispatchers.Main).launch {
             if (files[position].length() > 0) {
