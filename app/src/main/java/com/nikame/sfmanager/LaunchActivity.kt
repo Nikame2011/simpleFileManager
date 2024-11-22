@@ -54,7 +54,7 @@ class LaunchActivity : AppCompatActivity() {
     }
 
     fun runIndexator() {
-        FileIndexer.runIndexation()
+        FileIndexer.runIndexationAsync()
         val intent = Intent(this, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -81,6 +81,11 @@ class LaunchActivity : AppCompatActivity() {
             ) {
                 permissionsNonGranted.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
             }
+
+//            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_MEDIA_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//                permissionsNonGranted.add(Manifest.permission.ACCESS_MEDIA_LOCATION)
+//            }
+
             if (!permissionsNonGranted.isEmpty()) {
                 ActivityCompat
                     .requestPermissions(

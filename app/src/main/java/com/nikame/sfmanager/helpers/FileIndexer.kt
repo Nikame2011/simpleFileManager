@@ -1,7 +1,15 @@
 package com.nikame.sfmanager.helpers
 
+
+import android.content.ContentUris
+import android.content.Context
+import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
+import android.util.Log
 import android.webkit.MimeTypeMap
+import android.widget.Switch
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -13,6 +21,12 @@ import java.net.URLEncoder
 import kotlin.collections.ArrayList
 
 class FileIndexer {
+    //Механизм взаимодействия должен быть таким:
+    // Активити передаёт сюда листенер для отслеживания обновлений индексов.
+    // потом активити запрашивает текущие индексы: если есть уже обновлённые, то передаются они.
+    // иначе, если есть устаревшие, загруженные из сохранения - передаём их. иначе ничего не передаём
+    //
+
     companion object {
 
 //TODO add class to describe folders in main fragment: class need include list with allowed types files,
@@ -30,6 +44,10 @@ class FileIndexer {
         var deferredIndexation: Deferred<Array<TypeDescriptor>>? = null
         var deferredSavedIndexation: Deferred<Array<TypeDescriptor>>? = null
 
+        var hmDeferredIndexation: HashMap<String, Deferred<TypeDescriptor>> = HashMap()
+
+        var hmIndexes: HashMap<String, TypeDescriptor> = HashMap()
+
         var counter: Array<Int>? = null
 
         var indexes: Array<TypeDescriptor>? = null
@@ -40,14 +58,29 @@ class FileIndexer {
 
         var descriptors: Array<TypeDescriptor>? = null
 
-        lateinit var indexFiles: Array<ArrayList<DirInfo>>
+//        lateinit var indexFiles: Array<ArrayList<DirInfo>>
 
-        fun runIndexation() {
-            //todo maybe need use globalScope?
+        /**
+         * быстрый запуск индексатора, для случаев, когда нет необходимости получить его результат сразу же.
+         * Запуск пройдёт в отдельном потоке, о его результате сообщено не будет
+         */
+        fun runIndexationAsync() {
             CoroutineScope(Dispatchers.Default).launch {
+
+                runIndexation().await()
+            }
+        }
+
+        /**
+         * стандартный запуск индексатора, для случаев, когда необходимо получить результат и работать с ним.
+         * Возвращает Deferred, который будет выполнен, когда индексация запущена. после этого можно спокойно запускать getIndexes
+         */
+        suspend fun runIndexation(): Deferred<Boolean> {
+            //todo maybe need use globalScope?
+            return CoroutineScope(Dispatchers.Default).async {
                 types = arrayOf(audioTypesList, imageTypesList, videoTypesList, documentsTypesList)
-                indexFiles =
-                    Array(types!!.size) {ArrayList()} //todo add initialize from different size with count from added type Lists
+//                indexFiles =
+//                    Array(types!!.size) { ArrayList() } //todo add initialize from different size with count from added type Lists
 //                deferredCounter =//todo remove this
 //                    countFilesTarget(
 //                        Environment.getExternalStorageDirectory(),
@@ -65,6 +98,55 @@ class FileIndexer {
                     Environment.getExternalStorageDirectory(),
                     descriptors!!
                 )
+                return@async true
+            }
+        }
+
+
+        /**
+         * быстрый запуск индексатора, для случаев, когда нет необходимости получить его результат сразу же.
+         * Запуск пройдёт в отдельном потоке, о его результате сообщено не будет
+         */
+        fun runIndexationNewAsync(appContext: Context) {
+            CoroutineScope(Dispatchers.Default).launch {
+
+                runIndexationNew(appContext).await()
+            }
+        }
+
+        /**
+         * стандартный запуск индексатора, для случаев, когда необходимо получить результат и работать с ним.
+         * Возвращает Deferred, который будет выполнен, когда индексация запущена. после этого можно спокойно запускать getIndexes
+         */
+        suspend fun runIndexationNew(appContext: Context): Deferred<Boolean> {
+            //todo maybe need use globalScope?
+            return CoroutineScope(Dispatchers.Default).async {
+//                types = arrayOf(audioTypesList, imageTypesList, videoTypesList, documentsTypesList)
+//                indexFiles =
+//                    Array(types!!.size) { ArrayList() } //todo add initialize from different size with count from added type Lists
+//                deferredCounter =//todo remove this
+//                    countFilesTarget(
+//                        Environment.getExternalStorageDirectory(),
+//                        types!!
+//                    )
+
+//                descriptors = arrayOf(
+//                    TypeDescriptor(audioTypesList),
+//                    TypeDescriptor(imageTypesList),
+//                    TypeDescriptor(videoTypesList),
+//                    TypeDescriptor(documentsTypesList)
+//                )
+//
+//                deferredIndexation = runDescriptorIndexation(
+//                    Environment.getExternalStorageDirectory(),
+//                    descriptors!!
+//                )
+
+                hmDeferredIndexation.put("Audio", ind(appContext, "Audio"))
+                hmDeferredIndexation.put("Video", ind(appContext, "Video"))
+                hmDeferredIndexation.put("Images", ind(appContext, "Images"))
+//                hmDeferredIndexation.put("Audio",)
+                return@async true
             }
         }
 
@@ -81,6 +163,98 @@ class FileIndexer {
 //            return counter as Array<Int>
 //        }
 
+        suspend fun ind(appContext: Context, type: String): Deferred<TypeDescriptor> {
+            if (type.equals("Images")) {
+                return CoroutineScope(Dispatchers.Default).async {
+                    val descriptor: TypeDescriptor = TypeDescriptor()
+
+                    val collection =
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            MediaStore.Images.Media.getContentUri(
+                                MediaStore.VOLUME_EXTERNAL
+                            )
+                        } else {
+                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                        }
+
+                    val projection = arrayOf(
+                        MediaStore.Images.Media._ID,
+                        MediaStore.Images.Media.DISPLAY_NAME,
+                        MediaStore.Images.Media.SIZE,
+                        MediaStore.Images.Media.DATA
+                    )
+
+// Show only Imagess that are at least 5 minutes in duration.
+//                val selection = "${MediaStore.Images.Media.DURATION} >= ?"
+//                val selectionArgs = arrayOf(
+//                    TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES).toString()
+//                )
+
+// Display Imagess in alphabetical order based on their display name.
+                    val sortOrder = "${MediaStore.Images.Media.DISPLAY_NAME} ASC"
+
+                    val query = appContext.applicationContext?.contentResolver?.query(
+                        collection,
+                        projection,
+                        null,
+                        null,
+                        sortOrder
+                    )
+                    query?.use { cursor ->
+                        // Cache column indices.
+                        val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+                        val nameColumn =
+                            cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
+//                    val durationColumn =
+//                        cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DURATION)
+                        val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.SIZE)
+                        val dataColumn =
+                            cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+
+
+                        while (cursor.moveToNext()) {
+                            // Get values of columns for a given Images.
+                            val id = cursor.getLong(idColumn)
+                            val name = cursor.getString(nameColumn)
+//                        val duration = cursor.getInt(durationColumn)
+                            val size = cursor.getInt(sizeColumn)
+                            val data = cursor.getString(dataColumn)
+
+                            val contentUri: Uri = ContentUris.withAppendedId(
+                                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                id
+                            )
+                            val file = File(data)
+                            if (!descriptor.hmDirectories.contains(file.absolutePath)) {
+                                descriptor.hmDirectories.put(
+                                    file.absolutePath,
+                                    DirInfo(file.parentFile, file.absolutePath, null, 0, 0)
+                                )
+                            }
+                            descriptor.hmDirectories.get(file.absolutePath)?.size = file.length()
+                            descriptor.hmDirectories.get(file.absolutePath)?.count =
+                                descriptor.hmDirectories.get(file.absolutePath)?.count!! + 1
+                            descriptor.hmDirectories.get(file.absolutePath)?.listFiles?.add(file)
+                            // Stores column values and the contentUri in a local object
+                            // that represents the media file.
+//                            Log.e("fileeeeeImages","${contentUri}, ${name},  ${size}, ${data}")//${duration},
+//                        ImagesList += Images(contentUri, name, duration, size)
+                        }
+                    }
+
+
+
+
+                    return@async descriptor
+                }
+            } else {
+                return CoroutineScope(Dispatchers.Default).async {
+                    val descriptor: TypeDescriptor = TypeDescriptor()
+                    return@async descriptor
+                }
+            }
+        }
+
         suspend fun getSavedIndexes(): Array<TypeDescriptor> {
             if (savedIndexes == null) {
                 if (deferredSavedIndexation != null) {
@@ -92,74 +266,94 @@ class FileIndexer {
             return savedIndexes as Array<TypeDescriptor>
         }
 
-        suspend fun getIndexes(): Array<TypeDescriptor> {
-            if (indexes == null) {
-                if (deferredIndexation != null) {
-                    indexes = deferredIndexation!!.await()
+//        suspend fun getIndexes(): Array<TypeDescriptor> {
+//            if (indexes == null) {
+//                if (deferredIndexation != null) {
+//                    indexes = deferredIndexation!!.await()
+//                    //todo add code to save counter in shared preference and load from while app starting - this changes allow visually speed up loading
+//                } else {
+//                    runIndexation().await()
+//                    return getIndexes()
+////                    throw NullPointerException()
+//
+//                }
+//            }
+//            return indexes as Array<TypeDescriptor>
+//        }
+
+        suspend fun getIndexes(appContext: Context, key: String): TypeDescriptor? {
+            //todo нужно разделить индексы - хранить их в хешмапе по типу файлов, а не в листе
+            // получать их тоже нужно по индексу. деферред тоже нужно получать по типу файлов
+            // и по мере получения нужно складывать в хешмап
+            if (!hmIndexes.containsKey(key) || hmIndexes.get(key) == null) {
+                if (hmDeferredIndexation.get(key) != null) {
+                    hmIndexes.put(key, hmDeferredIndexation.get(key)!!.await())
                     //todo add code to save counter in shared preference and load from while app starting - this changes allow visually speed up loading
                 } else {
-                    throw NullPointerException()
-
+                    runIndexationNew(appContext).await()
+                    return getIndexes(appContext, key)
+//                    throw NullPointerException()
                 }
             }
-            return indexes as Array<TypeDescriptor>
+            return hmIndexes.get(key)
         }
 
         fun clearIndex() {//TODO add clear Index and updates in main fragment
             counter = null
-            runIndexation()
+//            runIndexation()
         }
 
-        private suspend fun countFilesTarget(
-            rootFile: File,
-            typeList: Array<ArrayList<String>>
-        ): Deferred<Array<Int>> {
-            return CoroutineScope(Dispatchers.Default).async {
-                val count = Array<Int>(typeList.size) { 0 }
-                val size = Array<Long>(typeList.size) { 0 }
-                val previewFile = Array<File?>(typeList.size) { null }
-                val defList = arrayListOf<Deferred<Array<Int>>>()
-                val list = rootFile.listFiles()
-                if (list != null && list.isNotEmpty()) {
-                    for (file in list) {
-                        if (file.isDirectory) {
-                            defList.add(countFilesTarget(file, typeList))
-                        } else {
-                            for (type in typeList) {
-                                if (type.contains(file.extension.lowercase())) {
-                                    count[typeList.indexOf(type)]++
-                                    size[typeList.indexOf(type)] += file.length()
-                                    if (previewFile[typeList.indexOf(type)] == null || file.lastModified() > previewFile[typeList.indexOf(
-                                            type
-                                        )]!!.lastModified()
-                                    ) {//todo remove if conditions and look how it's work
-                                        previewFile[typeList.indexOf(type)] = file
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+//        private suspend fun countFilesTarget(
+//            rootFile: File,
+//            typeList: Array<ArrayList<String>>
+//        ): Deferred<Array<Int>> {
+//            return CoroutineScope(Dispatchers.Default).async {
+//                val count = Array<Int>(typeList.size) { 0 }
+//                val size = Array<Long>(typeList.size) { 0 }
+//                val previewFile = Array<File?>(typeList.size) { null }
+//                val defList = arrayListOf<Deferred<Array<Int>>>()
+//                val list = rootFile.listFiles()
+//                if (list != null && list.isNotEmpty()) {
+//                    for (file in list) {
+//                        if (file.isDirectory) {
+//                            defList.add(countFilesTarget(file, typeList))
+//                        } else {
+//                            for (type in typeList) {
+//                                if (type.contains(file.extension.lowercase())) {
+//                                    count[typeList.indexOf(type)]++
+//                                    size[typeList.indexOf(type)] += file.length()
+//                                    if (previewFile[typeList.indexOf(type)] == null || file.lastModified() > previewFile[typeList.indexOf(
+//                                            type
+//                                        )]!!.lastModified()
+//                                    ) {//todo remove if conditions and look how it's work
+//                                        previewFile[typeList.indexOf(type)] = file
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//
+//                for (i in 0..count.size - 1) {
+//                    if (count[i] != 0) {
+//                        val thisFolder =
+//                            DirInfo(rootFile, rootFile.name, previewFile[i], count[i], size[i])
+//                        thisFolder.name += "(${thisFolder.count})"
+//                        sortAndAdd(indexFiles, thisFolder, i)
+//                    }
+//                }
+//
+//                for (def in defList) {
+//                    val countAwait = def.await()
+//                    for (i in 0..count.size - 1) {
+//                        count[i] += countAwait[i]
+//                    }
+//                }
+//
+//                return@async count
+//            }
+//        }
 
-                for (i in 0..count.size - 1) {
-                    if (count[i] != 0) {
-                        val thisFolder =
-                            DirInfo(rootFile, rootFile.name, previewFile[i], count[i], size[i])
-                        thisFolder.name += "(${thisFolder.count})"
-                        sortAndAdd(indexFiles, thisFolder, i)
-                    }
-                }
-
-                for (def in defList) {
-                    val countAwait = def.await()
-                    for (i in 0..count.size - 1) {
-                        count[i] += countAwait[i]
-                    }
-                }
-
-                return@async count
-            }
-        }
         /*
         private fun sortAndAdd(folders: ArrayList<DirInfo>, folder: DirInfo) {
             if (folders.size > 0) {
@@ -202,7 +396,6 @@ class FileIndexer {
             }
             return type
         }
-
 
         private suspend fun runDescriptorIndexation(
             rootFile: File, descriptor: Array<TypeDescriptor>
@@ -278,10 +471,17 @@ class FileIndexer {
     }
 }
 
-class TypeDescriptor(var extensions: ArrayList<String>) {
+class TypeDescriptor() {
+    constructor(extensions: java.util.ArrayList<String>) : this() {
+        this.extensions = extensions
+    }
+
     var count: Int = 0
     var size: Long = 0
     var directories = arrayListOf<DirInfo>()
+    var hmDirectories = HashMap<String, DirInfo>()//String - root url
+    lateinit var extensions: ArrayList<String>
+
 }
 
 class DirInfo(
@@ -289,7 +489,8 @@ class DirInfo(
     var name: String,
     var file: File?,
     var count: Int,
-    var size: Long
+    var size: Long,
 ) : Serializable {
     fun lastModified(): Long = rootFolder.lastModified()
+    var listFiles = arrayListOf<File>()
 }

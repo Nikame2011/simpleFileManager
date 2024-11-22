@@ -1,7 +1,13 @@
 package com.nikame.sfmanager.fragments
 
+import android.content.ContentResolver
+import android.content.ContentUris
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.provider.MediaStore
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,6 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
+import kotlin.math.log
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
@@ -70,7 +77,9 @@ class MainFragment : Fragment() {
 
         _binding = FragmentMainBinding.inflate(inflater, container, false)
         //  viewLifecycleOwner.lifecycleScope.launch {//TODO попробовать добавить для корректного закрытия при выходе из фрагмента
-        CoroutineScope(Dispatchers.Default).launch {
+//        CoroutineScope(Dispatchers.Default).launch {
+        //viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Default) {
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Default) {
             val rootDirectory =
                 Environment.getExternalStorageDirectory()
 
@@ -79,7 +88,7 @@ class MainFragment : Fragment() {
 //                val free = rootDirectory.freeSpace / 1.07374182E9f
                 val used = rootDirectory.usableSpace / 1.07374182E9f//1024f / 1024f / 1024f
 
-                viewLifecycleOwner.lifecycleScope.launch {
+                launch(Dispatchers.Main) {
                     //binding.textView2.text = "total: ${total}ГБ, used: ${used}ГБ"
                     binding.frExplorer.tvSize.text =
                         "${df.format(used)} Гб / ${df.format(total)} Гб"/* / ${df.format(free)} Гб"*/
@@ -94,7 +103,7 @@ class MainFragment : Fragment() {
                     directoryForFileSaving.length() // / 1.07374182E9f//1024f / 1024f / 1024f
                 val list = directoryForFileSaving.listFiles()
                 val count = list.size
-                viewLifecycleOwner.lifecycleScope.launch {
+                launch(Dispatchers.Main) {
                     //binding.textView2.text = "total: ${total}ГБ, used: ${used}ГБ"
                     binding.frDownload.tvSize.text =
                         "${df.format(total)} Гб (${count})"
@@ -102,6 +111,67 @@ class MainFragment : Fragment() {
             }
 
             launch {
+//                val videoList = mutableListOf<Video>()
+
+                val collection =
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        MediaStore.Video.Media.getContentUri(
+                            MediaStore.VOLUME_EXTERNAL
+                        )
+                    } else {
+                        MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                    }
+
+                val projection = arrayOf(
+                    MediaStore.Video.Media._ID,
+                    MediaStore.Video.Media.DISPLAY_NAME,
+                    MediaStore.Video.Media.DURATION,
+                    MediaStore.Video.Media.SIZE
+                )
+
+// Show only videos that are at least 5 minutes in duration.
+//                val selection = "${MediaStore.Video.Media.DURATION} >= ?"
+//                val selectionArgs = arrayOf(
+//                    TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES).toString()
+//                )
+
+// Display videos in alphabetical order based on their display name.
+                val sortOrder = "${MediaStore.Video.Media.DISPLAY_NAME} ASC"
+
+                val query = context?.applicationContext?.contentResolver?.query(
+                    collection,
+                    projection,
+                    null,
+                    null,
+                    sortOrder
+                )
+                query?.use { cursor ->
+                    // Cache column indices.
+                    val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
+                    val nameColumn =
+                        cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
+                    val durationColumn =
+                        cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
+                    val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.SIZE)
+
+                    while (cursor.moveToNext()) {
+                        // Get values of columns for a given video.
+                        val id = cursor.getLong(idColumn)
+                        val name = cursor.getString(nameColumn)
+                        val duration = cursor.getInt(durationColumn)
+                        val size = cursor.getInt(sizeColumn)
+
+                        val contentUri: Uri = ContentUris.withAppendedId(
+                            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                            id
+                        )
+
+                        // Stores column values and the contentUri in a local object
+                        // that represents the media file.
+                        Log.e("fileeeee","${contentUri}, ${name}, ${duration}, ${size}")
+//                        videoList += Video(contentUri, name, duration, size)
+                    }
+                }
 //                val directoryDocuments =
 //                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
 //                //val sm:StorageManager
@@ -113,6 +183,74 @@ class MainFragment : Fragment() {
 //                    binding.frDocuments.tvSize.text =
 //                        "${df.format(total)} Гб (${count})"
 //                }
+            }
+
+            launch {
+
+                val collection =
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        MediaStore.Images.Media.getContentUri(
+                            MediaStore.VOLUME_EXTERNAL
+                        )
+                    } else {
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                    }
+
+                val projection = arrayOf(
+                    MediaStore.Images.Media._ID,
+                    MediaStore.Images.Media.DISPLAY_NAME,
+                    MediaStore.Images.Media.SIZE,
+                    MediaStore.Images.Media.DATA
+                )
+
+// Show only Imagess that are at least 5 minutes in duration.
+//                val selection = "${MediaStore.Images.Media.DURATION} >= ?"
+//                val selectionArgs = arrayOf(
+//                    TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES).toString()
+//                )
+
+// Display Imagess in alphabetical order based on their display name.
+                val sortOrder = "${MediaStore.Images.Media.DISPLAY_NAME} ASC"
+
+                val query = context?.applicationContext?.contentResolver?.query(
+                    collection,
+                    projection,
+                    null,
+                    null,
+                    sortOrder
+                )
+                query?.use { cursor ->
+                    // Cache column indices.
+                    val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+                    val nameColumn =
+                        cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
+//                    val durationColumn =
+//                        cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DURATION)
+                    val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.SIZE)
+                    val dataColumn =
+                        cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+
+
+                    while (cursor.moveToNext()) {
+                        // Get values of columns for a given Images.
+                        val id = cursor.getLong(idColumn)
+                        val name = cursor.getString(nameColumn)
+//                        val duration = cursor.getInt(durationColumn)
+                        val size = cursor.getInt(sizeColumn)
+                        val data = cursor.getString(dataColumn)
+
+                        val contentUri: Uri = ContentUris.withAppendedId(
+                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                            id
+                        )
+
+                        // Stores column values and the contentUri in a local object
+                        // that represents the media file.
+                        Log.e("fileeeeeImages","${contentUri}, ${name},  ${size}, ${data}")//${duration},
+//                        ImagesList += Images(contentUri, name, duration, size)
+                    }
+                }
+
             }
 
 //            launch {/*
@@ -134,15 +272,15 @@ class MainFragment : Fragment() {
 //                }
 //            }
 
-            launch {
-                var indexes = FileIndexer.getIndexes()
-                viewLifecycleOwner.lifecycleScope.launch {
-                    binding.frAudio.tvSize.text = indexes[0].count.toString()
-                    binding.frImage.tvSize.text = indexes[1].count.toString()
-                    binding.frVideo.tvSize.text = indexes[2].count.toString()
-                    binding.frDocuments.tvSize.text = indexes[3].count.toString()
-                }
-            }
+//            launch {
+//                var indexes = FileIndexer.getIndexes()
+//                launch(Dispatchers.Main) {
+//                    binding.frAudio.tvSize.text = indexes[0].count.toString()
+//                    binding.frImage.tvSize.text = indexes[1].count.toString()
+//                    binding.frVideo.tvSize.text = indexes[2].count.toString()
+//                    binding.frDocuments.tvSize.text = indexes[3].count.toString()
+//                }
+//            }
         }
         // }
         return binding.root
@@ -165,7 +303,6 @@ class MainFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
 
         binding.frExplorer.tvName.text = "Память устройства"
         binding.frExplorer.root.setOnClickListener(onClickListener)
