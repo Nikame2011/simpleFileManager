@@ -32,32 +32,35 @@ class MainFragment : Fragment() {
     val onClickListener = View.OnClickListener { view ->
 
         var id = 0
-        var type = -1
+        var type=""
         val bundle = Bundle()
 
         if (view.id == R.id.frExplorer) {
             bundle.putSerializable("folder", Environment.getExternalStorageDirectory())
             id = R.id.action_mainFragment_to_explorer
         } else if (view.id == R.id.frDownload) {
-            bundle.putSerializable("folder", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS))
+            bundle.putSerializable(
+                "folder",
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            )
             id = R.id.action_mainFragment_to_explorer
         } else if (view.id == R.id.frImage) {
             id = R.id.action_mainFragment_to_photo
-            type = 1
+            type = "Images"
         } else if (view.id == R.id.frVideo) {
             id = R.id.action_mainFragment_to_photo
-            type = 2
+            type = "Video"
         } else if (view.id == R.id.frAudio) {
             id = R.id.action_mainFragment_to_photo
-            type = 0
-        }else if (view.id == R.id.frDocuments) {
+            type = "Audio"
+        } else if (view.id == R.id.frDocuments) {
             id = R.id.action_mainFragment_to_photo
-            type = 3
+            type = "Documents"
         } else {
             return@OnClickListener
         }
 
-        bundle.putInt("typeFiles", type)
+        bundle.putString("typeFiles", type)
         findNavController().navigate(
             id,
             bundle
@@ -110,148 +113,148 @@ class MainFragment : Fragment() {
                 }
             }
 
-            launch {
-//                val videoList = mutableListOf<Video>()
-
-                val collection =
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        MediaStore.Video.Media.getContentUri(
-                            MediaStore.VOLUME_EXTERNAL
-                        )
-                    } else {
-                        MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-                    }
-
-                val projection = arrayOf(
-                    MediaStore.Video.Media._ID,
-                    MediaStore.Video.Media.DISPLAY_NAME,
-                    MediaStore.Video.Media.DURATION,
-                    MediaStore.Video.Media.SIZE
-                )
-
-// Show only videos that are at least 5 minutes in duration.
-//                val selection = "${MediaStore.Video.Media.DURATION} >= ?"
-//                val selectionArgs = arrayOf(
-//                    TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES).toString()
-//                )
-
-// Display videos in alphabetical order based on their display name.
-                val sortOrder = "${MediaStore.Video.Media.DISPLAY_NAME} ASC"
-
-                val query = context?.applicationContext?.contentResolver?.query(
-                    collection,
-                    projection,
-                    null,
-                    null,
-                    sortOrder
-                )
-                query?.use { cursor ->
-                    // Cache column indices.
-                    val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
-                    val nameColumn =
-                        cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
-                    val durationColumn =
-                        cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
-                    val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.SIZE)
-
-                    while (cursor.moveToNext()) {
-                        // Get values of columns for a given video.
-                        val id = cursor.getLong(idColumn)
-                        val name = cursor.getString(nameColumn)
-                        val duration = cursor.getInt(durationColumn)
-                        val size = cursor.getInt(sizeColumn)
-
-                        val contentUri: Uri = ContentUris.withAppendedId(
-                            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                            id
-                        )
-
-                        // Stores column values and the contentUri in a local object
-                        // that represents the media file.
-                        Log.e("fileeeee","${contentUri}, ${name}, ${duration}, ${size}")
-//                        videoList += Video(contentUri, name, duration, size)
-                    }
-                }
-//                val directoryDocuments =
-//                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
-//                //val sm:StorageManager
-//                val total = Files.size(directoryDocuments.toPath()) //directoryDocuments.length()// / 1.07374182E9f//1024f / 1024f / 1024f
-//                val count = directoryDocuments.listFiles().size
+//            launch {
+////                val videoList = mutableListOf<Video>()
 //
-//                viewLifecycleOwner.lifecycleScope.launch {
-//                    //binding.textView2.text = "total: ${total}ГБ, used: ${used}ГБ"
-//                    binding.frDocuments.tvSize.text =
-//                        "${df.format(total)} Гб (${count})"
-//                }
-            }
-
-            launch {
-
-                val collection =
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        MediaStore.Images.Media.getContentUri(
-                            MediaStore.VOLUME_EXTERNAL
-                        )
-                    } else {
-                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-                    }
-
-                val projection = arrayOf(
-                    MediaStore.Images.Media._ID,
-                    MediaStore.Images.Media.DISPLAY_NAME,
-                    MediaStore.Images.Media.SIZE,
-                    MediaStore.Images.Media.DATA
-                )
-
-// Show only Imagess that are at least 5 minutes in duration.
-//                val selection = "${MediaStore.Images.Media.DURATION} >= ?"
-//                val selectionArgs = arrayOf(
-//                    TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES).toString()
+//                val collection =
+//                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+//                        MediaStore.Video.Media.getContentUri(
+//                            MediaStore.VOLUME_EXTERNAL
+//                        )
+//                    } else {
+//                        MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+//                    }
+//
+//                val projection = arrayOf(
+//                    MediaStore.Video.Media._ID,
+//                    MediaStore.Video.Media.DISPLAY_NAME,
+//                    MediaStore.Video.Media.DURATION,
+//                    MediaStore.Video.Media.SIZE
 //                )
-
-// Display Imagess in alphabetical order based on their display name.
-                val sortOrder = "${MediaStore.Images.Media.DISPLAY_NAME} ASC"
-
-                val query = context?.applicationContext?.contentResolver?.query(
-                    collection,
-                    projection,
-                    null,
-                    null,
-                    sortOrder
-                )
-                query?.use { cursor ->
-                    // Cache column indices.
-                    val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-                    val nameColumn =
-                        cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
+//
+//// Show only videos that are at least 5 minutes in duration.
+////                val selection = "${MediaStore.Video.Media.DURATION} >= ?"
+////                val selectionArgs = arrayOf(
+////                    TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES).toString()
+////                )
+//
+//// Display videos in alphabetical order based on their display name.
+//                val sortOrder = "${MediaStore.Video.Media.DISPLAY_NAME} ASC"
+//
+//                val query = context?.applicationContext?.contentResolver?.query(
+//                    collection,
+//                    projection,
+//                    null,
+//                    null,
+//                    sortOrder
+//                )
+//                query?.use { cursor ->
+//                    // Cache column indices.
+//                    val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
+//                    val nameColumn =
+//                        cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
 //                    val durationColumn =
-//                        cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DURATION)
-                    val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.SIZE)
-                    val dataColumn =
-                        cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
-
-
-                    while (cursor.moveToNext()) {
-                        // Get values of columns for a given Images.
-                        val id = cursor.getLong(idColumn)
-                        val name = cursor.getString(nameColumn)
+//                        cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
+//                    val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.SIZE)
+//
+//                    while (cursor.moveToNext()) {
+//                        // Get values of columns for a given video.
+//                        val id = cursor.getLong(idColumn)
+//                        val name = cursor.getString(nameColumn)
 //                        val duration = cursor.getInt(durationColumn)
-                        val size = cursor.getInt(sizeColumn)
-                        val data = cursor.getString(dataColumn)
+//                        val size = cursor.getInt(sizeColumn)
+//
+//                        val contentUri: Uri = ContentUris.withAppendedId(
+//                            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+//                            id
+//                        )
+//
+//                        // Stores column values and the contentUri in a local object
+//                        // that represents the media file.
+//                        Log.e("fileeeee","${contentUri}, ${name}, ${duration}, ${size}")
+////                        videoList += Video(contentUri, name, duration, size)
+//                    }
+//                }
+////                val directoryDocuments =
+////                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+////                //val sm:StorageManager
+////                val total = Files.size(directoryDocuments.toPath()) //directoryDocuments.length()// / 1.07374182E9f//1024f / 1024f / 1024f
+////                val count = directoryDocuments.listFiles().size
+////
+////                viewLifecycleOwner.lifecycleScope.launch {
+////                    //binding.textView2.text = "total: ${total}ГБ, used: ${used}ГБ"
+////                    binding.frDocuments.tvSize.text =
+////                        "${df.format(total)} Гб (${count})"
+////                }
+//            }
 
-                        val contentUri: Uri = ContentUris.withAppendedId(
-                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                            id
-                        )
-
-                        // Stores column values and the contentUri in a local object
-                        // that represents the media file.
-                        Log.e("fileeeeeImages","${contentUri}, ${name},  ${size}, ${data}")//${duration},
-//                        ImagesList += Images(contentUri, name, duration, size)
-                    }
-                }
-
-            }
+//            launch {
+//
+//                val collection =
+//                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+//                        MediaStore.Images.Media.getContentUri(
+//                            MediaStore.VOLUME_EXTERNAL
+//                        )
+//                    } else {
+//                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+//                    }
+//
+//                val projection = arrayOf(
+//                    MediaStore.Images.Media._ID,
+//                    MediaStore.Images.Media.DISPLAY_NAME,
+//                    MediaStore.Images.Media.SIZE,
+//                    MediaStore.Images.Media.DATA
+//                )
+//
+//// Show only Imagess that are at least 5 minutes in duration.
+////                val selection = "${MediaStore.Images.Media.DURATION} >= ?"
+////                val selectionArgs = arrayOf(
+////                    TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES).toString()
+////                )
+//
+//// Display Imagess in alphabetical order based on their display name.
+//                val sortOrder = "${MediaStore.Images.Media.DISPLAY_NAME} ASC"
+//
+//                val query = context?.applicationContext?.contentResolver?.query(
+//                    collection,
+//                    projection,
+//                    null,
+//                    null,
+//                    sortOrder
+//                )
+//                query?.use { cursor ->
+//                    // Cache column indices.
+//                    val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+//                    val nameColumn =
+//                        cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
+////                    val durationColumn =
+////                        cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DURATION)
+//                    val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.SIZE)
+//                    val dataColumn =
+//                        cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+//
+//
+//                    while (cursor.moveToNext()) {
+//                        // Get values of columns for a given Images.
+//                        val id = cursor.getLong(idColumn)
+//                        val name = cursor.getString(nameColumn)
+////                        val duration = cursor.getInt(durationColumn)
+//                        val size = cursor.getInt(sizeColumn)
+//                        val data = cursor.getString(dataColumn)
+//
+//                        val contentUri: Uri = ContentUris.withAppendedId(
+//                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+//                            id
+//                        )
+//
+//                        // Stores column values and the contentUri in a local object
+//                        // that represents the media file.
+//                        Log.e("fileeeeeImages","${contentUri}, ${name},  ${size}, ${data}")//${duration},
+////                        ImagesList += Images(contentUri, name, duration, size)
+//                    }
+//                }
+//
+//            }
 
 //            launch {/*
 //                var strt = activity?.intent?.getLongExtra("startTime", 0)
@@ -280,64 +283,94 @@ class MainFragment : Fragment() {
 //                    binding.frVideo.tvSize.text = indexes[2].count.toString()
 //                    binding.frDocuments.tvSize.text = indexes[3].count.toString()
 //                }
+
+            launch {
+                val indexes = FileIndexer.getIndexes(requireContext().applicationContext, "Images")
+                if (indexes != null) {
+                    launch(Dispatchers.Main) {
+                        binding.frImage.tvSize.text = indexes.count.toString()
+                    }
+                }
+            }
+
+            launch {
+                val indexes = FileIndexer.getIndexes(requireContext().applicationContext, "Video")
+                if (indexes != null) {
+                    launch(Dispatchers.Main) {
+                        binding.frVideo.tvSize.text = indexes.count.toString()
+                    }
+                }
+            }
+
+//            launch {
+//                val indexes = FileIndexer.getIndexes(requireContext().applicationContext, "Images")
+//                if (indexes != null) {
+//                    launch(Dispatchers.Main) {
+//                        binding.frImage.tvSize.text = indexes.count.toString()
+//                    }
+////                    binding.frAudio.tvSize.text = indexes[0].count.toString()
+////                    binding.frVideo.tvSize.text = indexes[2].count.toString()
+////                    binding.frDocuments.tvSize.text = indexes[3].count.toString()
+//                }
 //            }
+//            }
+            }
+            // }
+            return binding.root
+
         }
-        // }
-        return binding.root
 
+        val units = arrayOf("B", "KB", "MB", "GB", "TB")
+        private fun getStringSize(size: Long): String {
+            if (size <= 0)
+                return "0"
+            val digitGroups = (Math.log10(size.toDouble()) / Math.log10(1024.0)).toInt()
+            return DecimalFormat("#,##0.#").format(
+                size / Math.pow(
+                    1024.0,
+                    digitGroups.toDouble()
+                )
+            ) + " " + units[digitGroups]
+        }
+
+
+        override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+            super.onViewCreated(view, savedInstanceState)
+
+            binding.frExplorer.tvName.text = "Память устройства"
+            binding.frExplorer.root.setOnClickListener(onClickListener)
+            binding.frExplorer.iv.setImageResource(R.drawable.folder_default)
+
+            binding.frDownload.tvName.text = getString(R.string.download)
+            binding.frDownload.root.setOnClickListener(onClickListener)
+            binding.frDownload.iv.setImageResource(R.drawable.design_folder_download)
+
+            binding.frImage.tvName.text = getString(R.string.images)
+            binding.frImage.root.setOnClickListener(onClickListener)
+            binding.frImage.iv.setImageResource(R.drawable.design_folder_image)
+
+            binding.frVideo.tvName.text = getString(R.string.video)
+            binding.frVideo.root.setOnClickListener(onClickListener)
+            binding.frVideo.iv.setImageResource(R.drawable.design_folder_video)
+
+            binding.frAudio.tvName.text = getString(R.string.audio)
+            binding.frAudio.root.setOnClickListener(onClickListener)
+            binding.frAudio.iv.setImageResource(R.drawable.design_folder_audio)
+
+            binding.frDocuments.tvName.text = getString(R.string.documents)
+            binding.frDocuments.root.setOnClickListener(onClickListener)
+            binding.frDocuments.iv.setImageResource(R.drawable.design_folder_default)
+            //binding.btnImages.setOnClickListener(onClickListener)
+            //binding.btnDownload.setOnClickListener(onClickListener)
+
+        }
+
+        override fun onStop() {
+            super.onStop()
+        }
+
+        override fun onDestroyView() {
+            super.onDestroyView()
+            _binding = null
+        }
     }
-
-    val units = arrayOf("B", "KB", "MB", "GB", "TB")
-    private fun getStringSize(size: Long): String {
-        if (size <= 0)
-            return "0"
-        val digitGroups = (Math.log10(size.toDouble()) / Math.log10(1024.0)).toInt()
-        return DecimalFormat("#,##0.#").format(
-            size / Math.pow(
-                1024.0,
-                digitGroups.toDouble()
-            )
-        ) + " " + units[digitGroups]
-    }
-
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        binding.frExplorer.tvName.text = "Память устройства"
-        binding.frExplorer.root.setOnClickListener(onClickListener)
-        binding.frExplorer.iv.setImageResource(R.drawable.folder_default)
-
-        binding.frDownload.tvName.text = getString(R.string.download)
-        binding.frDownload.root.setOnClickListener(onClickListener)
-        binding.frDownload.iv.setImageResource(R.drawable.design_folder_download)
-
-        binding.frImage.tvName.text = getString(R.string.images)
-        binding.frImage.root.setOnClickListener(onClickListener)
-        binding.frImage.iv.setImageResource(R.drawable.design_folder_image)
-
-        binding.frVideo.tvName.text = getString(R.string.video)
-        binding.frVideo.root.setOnClickListener(onClickListener)
-        binding.frVideo.iv.setImageResource(R.drawable.design_folder_video)
-
-        binding.frAudio.tvName.text = getString(R.string.audio)
-        binding.frAudio.root.setOnClickListener(onClickListener)
-        binding.frAudio.iv.setImageResource(R.drawable.design_folder_audio)
-
-        binding.frDocuments.tvName.text = getString(R.string.documents)
-        binding.frDocuments.root.setOnClickListener(onClickListener)
-        binding.frDocuments.iv.setImageResource(R.drawable.design_folder_default)
-        //binding.btnImages.setOnClickListener(onClickListener)
-        //binding.btnDownload.setOnClickListener(onClickListener)
-
-    }
-
-    override fun onStop() {
-        super.onStop()
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
-    }
-}

@@ -163,10 +163,10 @@ class FileIndexer {
 //            return counter as Array<Int>
 //        }
 
-        suspend fun ind(appContext: Context, type: String): Deferred<TypeDescriptor> {
+        fun ind(appContext: Context, type: String): Deferred<TypeDescriptor> {
             if (type.equals("Images")) {
                 return CoroutineScope(Dispatchers.Default).async {
-                    val descriptor: TypeDescriptor = TypeDescriptor()
+                    val descriptor = TypeDescriptor()
 
                     val collection =
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -225,6 +225,88 @@ class FileIndexer {
                                 id
                             )
                             val file = File(data)
+                            if (!descriptor.hmDirectories.contains(file.parentFile!!.name)) {
+                                descriptor.hmDirectories.put(
+                                    file.parentFile!!.name,
+                                    DirInfo(file.parentFile!!, file.parentFile!!.name, file, 0, 0)
+                                )
+                            }
+                            descriptor.hmDirectories.get(file.parentFile!!.name)?.size = descriptor.hmDirectories.get(file.parentFile!!.name)?.size!! + file.length()
+                            descriptor.hmDirectories.get(file.parentFile!!.name)?.count =
+                                descriptor.hmDirectories.get(file.parentFile!!.name)?.count!! + 1
+                            descriptor.hmDirectories.get(file.parentFile!!.name)?.listFiles?.add(file)
+                            descriptor.size+=file.length()
+                            descriptor.count++
+                            // Stores column values and the contentUri in a local object
+                            // that represents the media file.
+//                            Log.e("fileeeeeImages","${contentUri}, ${name},  ${size}, ${data}")//${duration},
+//                        ImagesList += Images(contentUri, name, duration, size)
+                        }
+                    }
+
+                    return@async descriptor
+                }
+            } else if (type.equals("Video")) {
+                return CoroutineScope(Dispatchers.Default).async {
+                    val descriptor = TypeDescriptor()
+
+                    val collection =
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            MediaStore.Images.Media.getContentUri(
+                                MediaStore.VOLUME_EXTERNAL
+                            )
+                        } else {
+                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                        }
+
+                    val projection = arrayOf(
+                        MediaStore.Images.Media._ID,
+                        MediaStore.Images.Media.DISPLAY_NAME,
+                        MediaStore.Images.Media.SIZE,
+                        MediaStore.Video.Media.DURATION,
+                        MediaStore.Images.Media.DATA
+                    )
+
+// Show only Imagess that are at least 5 minutes in duration.
+//                val selection = "${MediaStore.Images.Media.DURATION} >= ?"
+//                val selectionArgs = arrayOf(
+//                    TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES).toString()
+//                )
+
+// Display Imagess in alphabetical order based on their display name.
+                    val sortOrder = "${MediaStore.Images.Media.DISPLAY_NAME} ASC"
+
+                    val query = appContext.applicationContext?.contentResolver?.query(
+                        collection,
+                        projection,
+                        null,
+                        null,
+                        sortOrder
+                    )
+                    query?.use { cursor ->
+                        // Cache column indices.
+                        val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+                        val nameColumn =
+                            cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
+                        val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.SIZE)
+                        val dataColumn =
+                            cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+                        val durationColumn =
+                            cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
+
+                        while (cursor.moveToNext()) {
+                            // Get values of columns for a given Images.
+                            val id = cursor.getLong(idColumn)
+                            val name = cursor.getString(nameColumn)
+                            val duration = cursor.getInt(durationColumn)
+                            val size = cursor.getInt(sizeColumn)
+                            val data = cursor.getString(dataColumn)
+
+                            val contentUri: Uri = ContentUris.withAppendedId(
+                                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                id
+                            )
+                            val file = File(data)
                             if (!descriptor.hmDirectories.contains(file.absolutePath)) {
                                 descriptor.hmDirectories.put(
                                     file.absolutePath,
@@ -241,9 +323,6 @@ class FileIndexer {
 //                        ImagesList += Images(contentUri, name, duration, size)
                         }
                     }
-
-
-
 
                     return@async descriptor
                 }
@@ -481,6 +560,14 @@ class TypeDescriptor() {
     var directories = arrayListOf<DirInfo>()
     var hmDirectories = HashMap<String, DirInfo>()//String - root url
     lateinit var extensions: ArrayList<String>
+
+    fun getDirectoriies(): ArrayList<DirInfo>{
+        if(directories.isEmpty()&&hmDirectories.isNotEmpty()){
+            for(key in hmDirectories.keys)
+                directories.add(hmDirectories.get(key)!!)
+        }
+        return directories
+    }
 
 }
 

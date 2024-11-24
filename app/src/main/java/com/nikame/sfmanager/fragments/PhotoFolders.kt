@@ -49,7 +49,7 @@ class PhotoFolders : Fragment() {
                     }
                 }
         */
-        val typeFiles: Int = arguments?.getInt("typeFiles", 0)!!
+        val typeFiles: String = arguments?.getString("typeFiles")!!
 
         if (arguments?.containsKey("folder") == false) {
             //todo find difference with viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Default)
@@ -59,21 +59,24 @@ class PhotoFolders : Fragment() {
             // to viewLifecycleOwner.lifecycleScope.launch {launch(Dispatchers.Default){1} launch(Dispatchers.Default){2} await[1,2] 3 }}
             viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Default) {
 
-                val folders = FileIndexer.getIndexes()[typeFiles].directories//FileIndexer.indexFiles[typeFiles]
+                val folders =
+                    FileIndexer.getIndexes(requireContext().applicationContext,typeFiles)/*[typeFiles]*/?.getDirectoriies()//FileIndexer.indexFiles[typeFiles]
 
                 val size: Int = getDisplayWidth() / 3
 
                 launch(Dispatchers.Main) {
                     //Toast.makeText(context, "allFinded", Toast.LENGTH_SHORT).show();
 
-                    if (typeFiles == 0) {
+                    if (typeFiles.equals("Audio")) {
                         binding.rvImages.layoutManager =
                             LinearLayoutManager(binding.rvImages.context, RecyclerView.VERTICAL, false)
 
-                        binding.rvImages.adapter = FilesAudioAdapter(requireContext(), size/2, folders) {
+                        binding.rvImages.adapter = FilesAudioAdapter(requireContext(), size/2,
+                            folders!!
+                        ) {
                             val bundle = Bundle()
                             bundle.putSerializable("folder", it)
-                            bundle.putInt("typeFiles", typeFiles)
+                            bundle.putString("typeFiles", typeFiles)
                             findNavController().navigate(
                                 R.id.action_photo_self2,
                                 bundle
@@ -82,10 +85,12 @@ class PhotoFolders : Fragment() {
                     } else {
                         binding.rvImages.layoutManager = GridLayoutManager(binding.rvImages.context, 3)
 
-                        binding.rvImages.adapter = FilesImageAdapter(requireContext(), size, folders) {
+                        binding.rvImages.adapter = FilesImageAdapter(requireContext(), size,
+                            folders!!
+                        ) {
                             val bundle = Bundle()
                             bundle.putSerializable("folder", it)
-                            bundle.putInt("typeFiles", typeFiles)
+                            bundle.putString("typeFiles", typeFiles)
                             findNavController().navigate(
                                 R.id.action_photo_self2,
                                 bundle
@@ -163,7 +168,7 @@ class PhotoFolders : Fragment() {
 
             viewLifecycleOwner.lifecycleScope.launch {
 
-                if (typeFiles == 0) {
+                if (typeFiles.equals("Audio")) {
                     val size: Int = getDisplayWidth() / 6
                     binding.rvImages.layoutManager =
                         LinearLayoutManager(binding.rvImages.context, RecyclerView.VERTICAL, false)
@@ -180,10 +185,10 @@ class PhotoFolders : Fragment() {
                         arguments?.getSerializable("folder") as DirInfo
 
                     //if(rvImages.adapter!=null && rvImages.adapter is AdapterInterface )
-                    searchFiles3(
-                        directoryInfo.rootFolder, FileIndexer.types!![typeFiles],
-                        binding.rvImages.adapter as AdapterInterface
-                    )
+//                    searchFiles3(
+//                        directoryInfo.rootFolder, FileIndexer.types!![typeFiles],
+//                        binding.rvImages.adapter as AdapterInterface
+//                    )
                     // )
                 }
             }
@@ -220,24 +225,24 @@ class PhotoFolders : Fragment() {
         return Math.min(outMetrics.widthPixels,outMetrics.heightPixels)
     }
 
-    private suspend fun searchFiles3(
-        rootFile: File,
-        typeList: ArrayList<String>,
-        adapter: AdapterInterface
-    ) {
-        val list = rootFile.listFiles()
-        if (list != null && list.isNotEmpty()) {
-            for (file in list.reversed()) {
-                if (file.isFile) {
-                    if (typeList.contains(file.extension.lowercase())) {
-                        viewLifecycleOwner.lifecycleScope.launch {
-                            adapter.addItem(file)
-                        }
-                    }
-                }
-            }
-        }
-    }
+//    private suspend fun searchFiles3(
+//        rootFile: File,
+//        typeList: ArrayList<String>,
+//        adapter: AdapterInterface
+//    ) {
+//        val list = rootFile.listFiles()
+//        if (list != null && list.isNotEmpty()) {
+//            for (file in list.reversed()) {
+//                if (file.isFile) {
+//                    if (typeList.contains(file.extension.lowercase())) {
+//                        viewLifecycleOwner.lifecycleScope.launch {
+//                            adapter.addItem(file)
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)

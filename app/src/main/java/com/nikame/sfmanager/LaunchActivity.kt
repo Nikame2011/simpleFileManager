@@ -54,7 +54,7 @@ class LaunchActivity : AppCompatActivity() {
     }
 
     fun runIndexator() {
-        FileIndexer.runIndexationAsync()
+        FileIndexer.runIndexationNewAsync(this.applicationContext)
         val intent = Intent(this, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

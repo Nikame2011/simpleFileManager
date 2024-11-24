@@ -7,6 +7,8 @@ import com.github.chrisbanes.photoview.OnSingleFlingListener
 import com.github.chrisbanes.photoview.PhotoView
 import java.io.File
 
+//TODO add savedInstance reaction: after flip screen imeges dropdown to first opened
+
 class FullscreenActivity : AppCompatActivity() {
     private lateinit var files: ArrayList<File>
     private lateinit var iv: PhotoView

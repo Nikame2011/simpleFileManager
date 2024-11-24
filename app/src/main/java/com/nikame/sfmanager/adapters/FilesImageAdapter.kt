@@ -37,7 +37,7 @@ class FilesImageAdapter(
 
         holder.ivPresent.layoutParams.height = size
         holder.ivPresent.layoutParams.width = size
-        holder.tvName.text = files[position].name
+        holder.tvName.text = files[position].name+"("+files[position].count+")"
         holder.root.tag = position
         holder.root.setOnLongClickListener(longListener)
         holder.root.setOnClickListener(shortListener)
