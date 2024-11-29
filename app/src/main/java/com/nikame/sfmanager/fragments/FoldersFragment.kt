@@ -1,6 +1,7 @@
 package com.nikame.sfmanager.fragments
 
 import android.os.Bundle
+import android.os.Environment
 import android.util.DisplayMetrics
 import android.view.LayoutInflater
 import android.view.View
@@ -12,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.nikame.sfmanager.R
 import com.nikame.sfmanager.adapters.ExplorerAdapter
+import com.nikame.sfmanager.adapters.WayAdapter
 import com.nikame.sfmanager.databinding.FragmentExplorerBinding
 import kotlinx.coroutines.launch
 import java.io.File
@@ -20,7 +22,7 @@ import java.util.Collections
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
  */
-class Explorer : Fragment() {
+class FoldersFragment : Fragment() {
 
     private var _binding: FragmentExplorerBinding? = null
 
@@ -39,7 +41,8 @@ class Explorer : Fragment() {
             val directoryInfo: File =
                 arguments?.getSerializable("folder") as File
 
-            val size: Int = getDisplayWidth() / 10 //todo size is so different in other devices(tablets - phones) need create more efficient logic
+            val size: Int =
+                getDisplayWidth() / 10 //todo size is so different in other devices(tablets - phones) need create more efficient logic
             binding.rv.layoutManager =
                 LinearLayoutManager(binding.rv.context, RecyclerView.VERTICAL, false)
             val list = arrayListOf<File>()
@@ -60,6 +63,22 @@ class Explorer : Fragment() {
                 }
             })
             //todo sort files by different types: name, size, date, type
+
+            var way = ArrayList<String>()
+            var folder: File? = directoryInfo
+            while (folder != null) {
+                if (Environment.getExternalStorageDirectory().equals(folder)) {
+                    way.add(0, "Устройство")
+                    break
+                }
+                way.add(0, folder.name)
+                folder = folder.parentFile
+            }
+
+            binding.rvWay.layoutManager =
+                LinearLayoutManager(binding.rvWay.context, RecyclerView.HORIZONTAL, false)
+            binding.rvWay.adapter = WayAdapter(way)
+            binding.rvWay.scrollToPosition(way.size - 1)
 
             binding.rv.adapter = ExplorerAdapter(requireContext(), size, list) {
                 val bundle = Bundle()

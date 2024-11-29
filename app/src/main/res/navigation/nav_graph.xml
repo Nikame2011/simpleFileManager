@@ -11,31 +11,31 @@
         android:label="fragment_main"
         tools:layout="@layout/fragment_main">
         <action
-            android:id="@+id/action_mainFragment_to_explorer"
-            app:destination="@id/explorer" />
+            android:id="@+id/action_main_to_explorer"
+            app:destination="@id/explorerFragment" />
         <action
-            android:id="@+id/action_mainFragment_to_photo"
-            app:destination="@id/photo" />
+            android:id="@+id/action_main_to_media"
+            app:destination="@id/mediaFragment" />
     </fragment>
 
     <fragment
-        android:id="@+id/explorer"
-        android:name="com.nikame.sfmanager.fragments.Explorer"
+        android:id="@+id/explorerFragment"
+        android:name="com.nikame.sfmanager.fragments.FoldersFragment"
         android:label="Explorer"
         tools:layout="@layout/fragment_explorer" >
         <action
             android:id="@+id/action_explorer_self"
-            app:destination="@id/explorer" />
+            app:destination="@id/explorerFragment" />
     </fragment>
 
     <fragment
-        android:id="@+id/photo"
-        android:name="com.nikame.sfmanager.fragments.PhotoFolders"
+        android:id="@+id/mediaFragment"
+        android:name="com.nikame.sfmanager.fragments.MediaFragment"
         android:label="Photo"
         tools:layout="@layout/fragment_photo">
         <action
-            android:id="@+id/action_photo_self2"
-            app:destination="@id/photo" />
+            android:id="@+id/action_media_self"
+            app:destination="@id/mediaFragment" />
     </fragment>
 
 </navigation>

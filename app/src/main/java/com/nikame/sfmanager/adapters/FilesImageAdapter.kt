@@ -8,12 +8,9 @@ import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.nikame.sfmanager.R
 import com.nikame.sfmanager.helpers.DirInfo
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.nikame.sfmanager.helpers.FileUtils
 
 //todo add documentation to all classes and methods
 class FilesImageAdapter(
@@ -37,7 +34,7 @@ class FilesImageAdapter(
 
         holder.ivPresent.layoutParams.height = size
         holder.ivPresent.layoutParams.width = size
-        holder.tvName.text = files[position].name+"("+files[position].count+")"
+        holder.tvName.text = files[position].name + "(" + files[position].count + ")"
         holder.root.tag = position
         holder.root.setOnLongClickListener(longListener)
         holder.root.setOnClickListener(shortListener)
@@ -48,9 +45,7 @@ class FilesImageAdapter(
             holder.cbSelected.visibility = View.GONE
         }
 
-        CoroutineScope(Dispatchers.Main).launch {
-            Glide.with(context).load(files[position].file).into(holder.ivPresent)
-        }
+        FileUtils.runGlide(context, files[position].file!!, holder.ivPresent)
     }
 
     override fun getItemCount() = files.size

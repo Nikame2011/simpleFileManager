@@ -1,0 +1,10 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/material_dynamic_neutral60" android:state_enabled="false"></item>
+
+    <item android:drawable="@color/material_dynamic_neutral80" android:state_pressed="true"></item>
+
+    <item android:drawable="@color/material_dynamic_neutral80" android:state_checked="true"></item>
+
+    <item android:drawable="@color/white"></item>
+
+</selector>

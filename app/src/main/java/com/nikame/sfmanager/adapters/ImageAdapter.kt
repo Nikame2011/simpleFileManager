@@ -1,7 +1,6 @@
 package com.nikame.sfmanager.adapters
 
 import android.content.Context
-import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,19 +8,15 @@ import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.nikame.sfmanager.FullscreenActivity
 import com.nikame.sfmanager.R
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import java.io.File
+import com.nikame.sfmanager.helpers.FileInfo
+import com.nikame.sfmanager.helpers.FileUtils
 
 class ImageAdapter(
     private val context: Context,
     private val size: Int,
-    private val files: ArrayList<File>
-) : RecyclerView.Adapter<ImageAdapter.MyViewHolder>(), AdapterInterface {
+    private val files: ArrayList<FileInfo>
+) : RecyclerView.Adapter<ImageAdapter.MyViewHolder>()/*, AdapterInterface*/ {
 
     private val checked: ArrayList<Int> = ArrayList()
 
@@ -50,11 +45,7 @@ class ImageAdapter(
             holder.cbSelected.visibility = View.GONE
         }
 
-        CoroutineScope(Dispatchers.Main).launch {
-            if (files[position].length() > 0) {
-                Glide.with(context).load(files[position]).into(holder.ivPresent)
-            }
-        }
+        FileUtils.runGlide(context, files[position], holder.ivPresent)
     }
 
     override fun getItemCount() = files.size
@@ -62,10 +53,11 @@ class ImageAdapter(
     private val longListener: View.OnLongClickListener = View.OnLongClickListener {
         val number: Int = it.tag as Int
         if (isSelectionMode) {
-            val intent = Intent(context, FullscreenActivity::class.java)
-            intent.putExtra("CODE", files)
-            intent.putExtra("SELECTED", number)
-            it.context.startActivity(intent)
+            FileUtils.tryOpenFile(context, files[number])
+//            val intent = Intent(context, FullscreenActivity::class.java)
+//            intent.putExtra("CODE", files)
+//            intent.putExtra("SELECTED", number)
+//            it.context.startActivity(intent)
         } else {
             if (checked.contains(number)) {
                 checked.remove(number)
@@ -98,15 +90,17 @@ class ImageAdapter(
                 notifyItemChanged(number)
             }
         } else {
-            val intent = Intent(context, FullscreenActivity::class.java)
-            intent.putExtra("CODE", files)
-            intent.putExtra("SELECTED", number)
-            it.context.startActivity(intent)
+//            val intent = Intent(context, FullscreenActivity::class.java)
+//            intent.putExtra("CODE", files)
+//            intent.putExtra("SELECTED", number)
+//            it.context.startActivity(intent)
+            FileUtils.tryOpenFile(context, files[number])
         }
     }
 
-    @Synchronized
-    override fun addItem(file: File) {
+    /*
+        @Synchronized
+        override*/ fun addItem(file: FileInfo) {
         files.add(file)
         notifyItemInserted(files.size - 1)
     }

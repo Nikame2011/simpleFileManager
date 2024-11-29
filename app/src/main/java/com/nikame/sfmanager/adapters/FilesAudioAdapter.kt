@@ -1,8 +1,6 @@
 package com.nikame.sfmanager.adapters
 
 import android.content.Context
-import android.media.MediaMetadataRetriever
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,12 +8,9 @@ import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.nikame.sfmanager.R
 import com.nikame.sfmanager.helpers.DirInfo
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.nikame.sfmanager.helpers.FileUtils
 
 //todo add documentation to all classes and methods
 class FilesAudioAdapter(
@@ -38,7 +33,7 @@ class FilesAudioAdapter(
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
         holder.ivPresent.layoutParams.height = size
         holder.ivPresent.layoutParams.width = size
-        holder.tvName.text = files[position].name
+        holder.tvName.text = files[position].name + "(" + files[position].count + ")"
         holder.root.tag = position
         holder.root.setOnLongClickListener(longListener)
         holder.root.setOnClickListener(shortListener)
@@ -48,28 +43,12 @@ class FilesAudioAdapter(
         } else {
             holder.cbSelected.visibility = View.GONE
         }
-        CoroutineScope(Dispatchers.Main).launch {
-            if(files[position].file?.length()!! >0) {
-                try {
-                    val metaRetriver = MediaMetadataRetriever()
-                    metaRetriver.setDataSource(files[position].file?.absolutePath)
-                    val art = metaRetriver.getEmbeddedPicture()
-                    if (art != null) {
-                        Glide.with(context).load(art).into(holder.ivPresent)
-                    }
-                    else{//R.drawable.abc_ic_menu_selectall_mtrl_alpha
-                        Glide.with(context).load(R.drawable.design_folder_audio).into(holder.ivPresent)
-                    }
-                } catch (e: Exception) {
-                    Log.e("audio icon error", files[position].file?.absolutePath, e)
-                    //Toast.makeText(context, "audio icon error", Toast.LENGTH_LONG).show()
-                    Glide.with(context).load(R.drawable.design_folder_audio).into(holder.ivPresent)
-                }
-            }
-            else{//R.drawable.abc_ic_menu_selectall_mtrl_alpha
-                Glide.with(context).load(R.drawable.design_folder_audio).into(holder.ivPresent)
-            }
-        }
+
+        FileUtils.runGlide(
+            context,
+            if (files[position].file != null) files[position].file!! else files[position].rootFolder,
+            holder.ivPresent
+        )
     }
 
     override fun getItemCount() = files.size

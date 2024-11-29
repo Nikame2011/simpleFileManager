@@ -1,8 +1,8 @@
 package com.nikame.sfmanager.adapters
 
-import java.io.File
+import com.nikame.sfmanager.helpers.FileInfo
 
 interface AdapterInterface {
-    fun addItem(file: File){
+    fun addItem(file: FileInfo){
     }
 }

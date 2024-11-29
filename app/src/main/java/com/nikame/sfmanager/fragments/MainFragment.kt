@@ -1,13 +1,7 @@
 package com.nikame.sfmanager.fragments
 
-import android.content.ContentResolver
-import android.content.ContentUris
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.Environment
-import android.provider.MediaStore
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,11 +11,9 @@ import androidx.navigation.fragment.findNavController
 import com.nikame.sfmanager.R
 import com.nikame.sfmanager.databinding.FragmentMainBinding
 import com.nikame.sfmanager.helpers.FileIndexer
-import kotlinx.coroutines.CoroutineScope
+import com.nikame.sfmanager.helpers.FileUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.text.DecimalFormat
-import kotlin.math.log
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
@@ -37,24 +29,24 @@ class MainFragment : Fragment() {
 
         if (view.id == R.id.frExplorer) {
             bundle.putSerializable("folder", Environment.getExternalStorageDirectory())
-            id = R.id.action_mainFragment_to_explorer
+            id = R.id.action_main_to_explorer
         } else if (view.id == R.id.frDownload) {
             bundle.putSerializable(
                 "folder",
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             )
-            id = R.id.action_mainFragment_to_explorer
+            id = R.id.action_main_to_explorer
         } else if (view.id == R.id.frImage) {
-            id = R.id.action_mainFragment_to_photo
+            id = R.id.action_main_to_media
             type = "Images"
         } else if (view.id == R.id.frVideo) {
-            id = R.id.action_mainFragment_to_photo
+            id = R.id.action_main_to_media
             type = "Video"
         } else if (view.id == R.id.frAudio) {
-            id = R.id.action_mainFragment_to_photo
+            id = R.id.action_main_to_media
             type = "Audio"
         } else if (view.id == R.id.frDocuments) {
-            id = R.id.action_mainFragment_to_photo
+            id = R.id.action_main_to_media
             type = "Documents"
         } else {
             return@OnClickListener
@@ -71,7 +63,6 @@ class MainFragment : Fragment() {
     private var _binding: FragmentMainBinding? = null
 
     private val binding get() = _binding!!
-    val df = DecimalFormat("#.#")
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -87,14 +78,14 @@ class MainFragment : Fragment() {
                 Environment.getExternalStorageDirectory()
 
             launch {
-                val total = rootDirectory.totalSpace / 1.07374182E9f//1024f / 1024f / 1024f
+                val total = FileUtils.getStringSize(rootDirectory.totalSpace)
 //                val free = rootDirectory.freeSpace / 1.07374182E9f
-                val used = rootDirectory.usableSpace / 1.07374182E9f//1024f / 1024f / 1024f
+                val used = FileUtils.getStringSize(rootDirectory.usableSpace)
 
                 launch(Dispatchers.Main) {
                     //binding.textView2.text = "total: ${total}ГБ, used: ${used}ГБ"
                     binding.frExplorer.tvSize.text =
-                        "${df.format(used)} Гб / ${df.format(total)} Гб"/* / ${df.format(free)} Гб"*/
+                        "${used} / ${total} "/* / ${df.format(free)} Гб"*/
                 }
             }
 
@@ -102,14 +93,16 @@ class MainFragment : Fragment() {
                 val directoryForFileSaving =
                     Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
                 //val sm:StorageManager
-                val total =
-                    directoryForFileSaving.length() // / 1.07374182E9f//1024f / 1024f / 1024f
+                val totalSize =
+                    directoryForFileSaving.walkTopDown().filter { it.isFile }.map { it.length() }.sum()
                 val list = directoryForFileSaving.listFiles()
-                val count = list.size
-                launch(Dispatchers.Main) {
-                    //binding.textView2.text = "total: ${total}ГБ, used: ${used}ГБ"
-                    binding.frDownload.tvSize.text =
-                        "${df.format(total)} Гб (${count})"
+                if(list!=null) {
+                    val count = list.size
+                    launch(Dispatchers.Main) {
+                        //binding.textView2.text = "total: ${total}ГБ, used: ${used}ГБ"
+                        binding.frDownload.tvSize.text =
+                            "${FileUtils.getStringSize(totalSize)} (${count})"
+                    }
                 }
             }
 
@@ -302,64 +295,56 @@ class MainFragment : Fragment() {
                 }
             }
 
-//            launch {
-//                val indexes = FileIndexer.getIndexes(requireContext().applicationContext, "Images")
-//                if (indexes != null) {
-//                    launch(Dispatchers.Main) {
-//                        binding.frImage.tvSize.text = indexes.count.toString()
-//                    }
-////                    binding.frAudio.tvSize.text = indexes[0].count.toString()
-////                    binding.frVideo.tvSize.text = indexes[2].count.toString()
-////                    binding.frDocuments.tvSize.text = indexes[3].count.toString()
-//                }
-//            }
-//            }
+            launch {
+                val indexes = FileIndexer.getIndexes(requireContext().applicationContext, "Audio")
+                if (indexes != null) {
+                    launch(Dispatchers.Main) {
+                        binding.frAudio.tvSize.text = indexes.count.toString()
+                    }
+                }
+            }
+
+            launch {
+                val indexes = FileIndexer.getIndexes(requireContext().applicationContext, "Documents")
+                if (indexes != null) {
+                    launch(Dispatchers.Main) {
+                        binding.frDocuments.tvSize.text = indexes.count.toString()
+                    }
+                }
+            }
             }
             // }
             return binding.root
 
         }
 
-        val units = arrayOf("B", "KB", "MB", "GB", "TB")
-        private fun getStringSize(size: Long): String {
-            if (size <= 0)
-                return "0"
-            val digitGroups = (Math.log10(size.toDouble()) / Math.log10(1024.0)).toInt()
-            return DecimalFormat("#,##0.#").format(
-                size / Math.pow(
-                    1024.0,
-                    digitGroups.toDouble()
-                )
-            ) + " " + units[digitGroups]
-        }
-
 
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             super.onViewCreated(view, savedInstanceState)
 
-            binding.frExplorer.tvName.text = "Память устройства"
+            binding.frExplorer.tvName.text = getString(R.string.deviceStorage)
             binding.frExplorer.root.setOnClickListener(onClickListener)
-            binding.frExplorer.iv.setImageResource(R.drawable.folder_default)
+            binding.frExplorer.iv.setImageResource(R.drawable.folder_empty)
 
             binding.frDownload.tvName.text = getString(R.string.download)
             binding.frDownload.root.setOnClickListener(onClickListener)
-            binding.frDownload.iv.setImageResource(R.drawable.design_folder_download)
+            binding.frDownload.iv.setImageResource(R.drawable.folder_download)
 
             binding.frImage.tvName.text = getString(R.string.images)
             binding.frImage.root.setOnClickListener(onClickListener)
-            binding.frImage.iv.setImageResource(R.drawable.design_folder_image)
+            binding.frImage.iv.setImageResource(R.drawable.folder_images)
 
             binding.frVideo.tvName.text = getString(R.string.video)
             binding.frVideo.root.setOnClickListener(onClickListener)
-            binding.frVideo.iv.setImageResource(R.drawable.design_folder_video)
+            binding.frVideo.iv.setImageResource(R.drawable.folder_video)
 
             binding.frAudio.tvName.text = getString(R.string.audio)
             binding.frAudio.root.setOnClickListener(onClickListener)
-            binding.frAudio.iv.setImageResource(R.drawable.design_folder_audio)
+            binding.frAudio.iv.setImageResource(R.drawable.folder_audio)
 
             binding.frDocuments.tvName.text = getString(R.string.documents)
             binding.frDocuments.root.setOnClickListener(onClickListener)
-            binding.frDocuments.iv.setImageResource(R.drawable.design_folder_default)
+            binding.frDocuments.iv.setImageResource(R.drawable.folder_text)
             //binding.btnImages.setOnClickListener(onClickListener)
             //binding.btnDownload.setOnClickListener(onClickListener)
 

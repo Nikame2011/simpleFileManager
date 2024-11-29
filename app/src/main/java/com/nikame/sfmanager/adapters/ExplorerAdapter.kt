@@ -9,12 +9,9 @@ import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.nikame.sfmanager.FullscreenActivity
 import com.nikame.sfmanager.R
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.nikame.sfmanager.helpers.FileUtils
 import java.io.File
 import java.util.Date
 
@@ -23,7 +20,7 @@ class ExplorerAdapter(
     private val size: Int,
     private val files: ArrayList<File>,
     val onFolderSelectedListener: (File) -> Unit
-) : RecyclerView.Adapter<ExplorerAdapter.MyViewHolder>(), AdapterInterface {
+) : RecyclerView.Adapter<ExplorerAdapter.MyViewHolder>()/*, AdapterInterface*/ {
 
     private val checked: ArrayList<Int> = ArrayList()
 
@@ -51,21 +48,23 @@ class ExplorerAdapter(
         } else {
             holder.cbSelected.visibility = View.GONE
         }
+//        val totalSize =
+//            files[position].walkTopDown().filter { it.isFile }.map { it.length() }.sum()
+//
+//        holder.tvDescr.text = FileUtils.getStringSize (totalSize)
 
-        holder.tvDescr.text = (files[position].length() / 1024f / 1024f).toString()
-        val dateFormat = android.text.format.DateFormat.getDateFormat(context)
-        holder.tvDate.text =dateFormat.format(Date(files[position].lastModified()))
+        if (files[position].isDirectory) {
+            val folders = files[position].listFiles({ file -> file.isDirectory })?.size
+            val counts = files[position].listFiles({ file -> !file.isDirectory })?.size
+            holder.tvDescr.text =
+                "Папок: ${if (folders == null) 0 else folders}. Файлов: ${if (counts == null) 0 else counts}"
+        } else {
+            holder.tvDescr.text = FileUtils.getStringSize(files[position].length())
+        }
+        val dateFormat = android.text.format.DateFormat.getMediumDateFormat(context)
+        holder.tvDate.text = dateFormat.format(Date(files[position].lastModified()))
 
-        if(files[position].isFile) {
-            CoroutineScope(Dispatchers.Main).launch {
-                if (files[position].length() > 0) {
-                    Glide.with(context).load(files[position]).into(holder.ivPresent)
-                }
-            }
-        }
-        else{
-            //todo need add folder icon
-        }
+        FileUtils.runGlide(context, files[position], holder.ivPresent)
     }
 
     override fun getItemCount() = files.size
@@ -110,23 +109,19 @@ class ExplorerAdapter(
             }
         } else {
             val file = files[number]
-            if(file.isDirectory){
+            if (file.isDirectory) {
                 onFolderSelectedListener(file)
-            }
-            else {
-                val intent = Intent(context, FullscreenActivity::class.java)
-                intent.putExtra("CODE", files)
-                intent.putExtra("SELECTED", number)
-                it.context.startActivity(intent)
+            } else {
+                FileUtils.tryOpenFile(context, file)
             }
         }
     }
 
-    @Synchronized
-    override fun addItem(file: File) {
-        files.add(file)
-        notifyItemInserted(files.size - 1)
-    }
+//    /*@Synchronized
+//    override*/ fun addItem(file: File) {
+//        files.add(file)
+//        notifyItemInserted(files.size - 1)
+//    }
 
     class MyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val root: ViewGroup = itemView.findViewById(R.id.clRoot)

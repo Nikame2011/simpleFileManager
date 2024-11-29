@@ -1,0 +1,29 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_enabled="false">
+        <layer-list>
+            <item android:drawable="@drawable/folder" />
+        </layer-list>
+    </item>
+
+    <item android:state_pressed="true">
+        <layer-list>
+            <item android:drawable="@drawable/folder_opened" />
+            <item android:drawable="@drawable/play_img" />
+        </layer-list>
+    </item>
+
+    <item android:state_checked="true">
+        <layer-list>
+            <item android:drawable="@drawable/folder_opened" />
+            <item android:drawable="@drawable/play_img" />
+        </layer-list>
+    </item>
+
+    <item>
+        <layer-list>
+            <item android:drawable="@drawable/folder" />
+            <item android:drawable="@drawable/play_img" />
+        </layer-list>
+    </item>
+
+</selector>

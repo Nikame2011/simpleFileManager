@@ -1,8 +1,6 @@
 package com.nikame.sfmanager.adapters
 
 import android.content.Context
-import android.media.MediaMetadataRetriever
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,19 +8,15 @@ import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.nikame.sfmanager.R
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import java.io.File
+import com.nikame.sfmanager.helpers.FileInfo
+import com.nikame.sfmanager.helpers.FileUtils
 import java.util.Date
-
 
 class AudioAdapter(
     private val context: Context,
     private val size: Int,
-    private val files: ArrayList<File>
+    private val files: ArrayList<FileInfo>
 ) : RecyclerView.Adapter<AudioAdapter.MyViewHolder>(), AdapterInterface {
 
     private val checked: ArrayList<Int> = ArrayList()
@@ -50,32 +44,12 @@ class AudioAdapter(
         } else {
             holder.cbSelected.visibility = View.GONE
         }
-        //TODO to video files add other adapter - because video-adapter need view as photo-adapter, but audio-adapter be like folder-view
 
-        holder.tvDescr.text = (files[position].length() / 1024f / 1024f).toString()
+        holder.tvDescr.text = FileUtils.getStringSize(files[position].size)
         val dateFormat = android.text.format.DateFormat.getDateFormat(context)
-        holder.tvDate.text = dateFormat.format(Date(files[position].lastModified()))
+        holder.tvDate.text = dateFormat.format(Date(files[position].file.lastModified()))
 
-        CoroutineScope(Dispatchers.Main).launch {
-            if (files[position].length() > 0) {
-                try {
-                    val metaRetriver = MediaMetadataRetriever()
-                    metaRetriver.setDataSource(files[position].absolutePath)
-                    val art = metaRetriver.getEmbeddedPicture()
-                    if (art != null) {
-                        Glide.with(context).load(art).into(holder.ivPresent)
-                    } else {
-                        Glide.with(context).load(R.drawable.file_audio).into(holder.ivPresent)
-                    }
-                } catch (e: Exception) {
-                    Log.e("audio icon error", files[position].absolutePath, e)
-                    //Toast.makeText(context, "audio icon error", Toast.LENGTH_LONG).show()
-                    Glide.with(context).load(R.drawable.file_audio).into(holder.ivPresent)
-                }
-            } else {
-                Glide.with(context).load(R.drawable.file_audio).into(holder.ivPresent)
-            }
-        }
+        FileUtils.runGlide(context, files[position], holder.ivPresent)
     }
 
     override fun getItemCount() = files.size
@@ -83,15 +57,7 @@ class AudioAdapter(
     private val longListener: View.OnLongClickListener = View.OnLongClickListener {
         val number: Int = it.tag as Int
         if (isSelectionMode) {
-            /*      TODO add code to open file in other apps or add audio/video players
-                   val intent = Intent(Intent.ACTION_VIEW, Uri.fromFile(files[number]))
-                   intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                   intent.setDataAndType(Uri.fromFile(files[number]), getMimeType(files[number]))
-                   it.context.startActivity(intent)*/
-//            val intent = Intent(context, FullscreenActivity::class.java)
-//            intent.putExtra("CODE", files)
-//            intent.putExtra("SELECTED", number)
-//            it.context.startActivity(intent)
+            FileUtils.tryShareFile(it.context, files[number].file)
         } else {
             if (checked.contains(number)) {
                 checked.remove(number)
@@ -124,25 +90,15 @@ class AudioAdapter(
                 notifyItemChanged(number)
             }
         } else {
-            /*      TODO add code to open file in other apps or add audio/video players
-                   val intent = Intent(Intent.ACTION_VIEW, Uri.fromFile(files[number]))
-                   intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                   intent.setDataAndType(Uri.fromFile(files[number]), getMimeType(files[number]))
-                   it.context.startActivity(intent)*/
-
-//            val intent = Intent(context, FullscreenActivity::class.java)
-//            intent.putExtra("CODE", files)
-//            intent.putExtra("SELECTED", number)
-//            it.context.startActivity(intent)
+            FileUtils.tryOpenFile(it.context, files[number])
         }
     }
 
     @Synchronized
-    override fun addItem(file: File) {
+    override fun addItem(file: FileInfo) {
         files.add(file)
         notifyItemInserted(files.size - 1)
     }
-
 
 
     class MyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

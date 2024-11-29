@@ -5,4 +5,6 @@
     <string name="video">Видео</string>
     <string name="audio">Аудио</string>
     <string name="documents">Документы</string>
+    <string name="rootFolder">Устройство</string>
+    <string name="deviceStorage">Память устройства</string>
 </resources>
